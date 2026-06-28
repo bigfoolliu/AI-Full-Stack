@@ -9,7 +9,7 @@ const username = ref('')
 const password = ref('')
 
 const handleLogin = () => {
-  const trimmedUsername = username.value.trim()
+  const trimmedUsername = username.value.trim()  // 去除首尾空格的用户名
 
   if (!trimmedUsername) {
     return
@@ -35,12 +35,12 @@ const handleLogin = () => {
       <form class="login-form" @submit.prevent="handleLogin">
         <label class="login-field">
           <span>用户名</span>
-          <input v-model="username" type="text" placeholder="请输入用户名" autocomplete="username" />
+          <input id="username" v-model="username" type="text" placeholder="请输入用户名" autocomplete="username" />
         </label>
 
         <label class="login-field">
           <span>密码</span>
-          <input v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
+          <input id="passward" v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
         </label>
 
         <button type="submit" class="login-submit">登录</button>
