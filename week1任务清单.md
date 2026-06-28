@@ -106,11 +106,11 @@ ai-knowledge-base/
 - [x] 创建 `backend` 目录
 - [x] 创建 `docs` 目录
 - [x] 用 `Vite` 初始化 `Vue 3 + TypeScript` 项目（参考： `vite.md`）
-- [ ] 在 `backend` 中初始化 `FastAPI` 项目
-- [ ] 后端编写第一个 `/health` 接口
-- [ ] 本地启动前端
-- [ ] 本地启动后端
-- [ ] 创建项目根目录 `README.md`
+- [x] 在 `backend` 中初始化 `FastAPI` 项目
+- [x] 后端编写第一个 `/health` 接口
+- [x] 本地启动前端
+- [x] 本地启动后端
+- [x] 创建项目根目录 `README.md`
 
 ### 今日输出
 
