@@ -38,13 +38,13 @@ const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
           <p class="shell-topbar__label">控制台</p>
           <h1>{{ currentTitle }}</h1>
         </div>
-        <div class="shell-user">
+        <RouterLink to="/login" class="shell-user">
           <span class="shell-user__avatar">L</span>
           <div>
             <strong>刘同学</strong>
             <p>后端转 AI 全栈</p>
           </div>
-        </div>
+        </RouterLink>
       </header>
 
       <main class="shell-content">
