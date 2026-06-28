@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
+import { useUserStore } from './stores/user'
 
+const router = useRouter()
 const route = useRoute()
+const userStore = useUserStore()
 
 const navItems = [
   { label: '工作台', to: '/dashboard' },
@@ -15,6 +18,14 @@ const pageTitleMap: Record<string, string> = {
 }
 
 const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
+const displayUsername = computed(() => userStore.username || '未登录用户')
+const displayRole = computed(() => (userStore.isLoggedIn ? '后端转 AI 全栈' : '点击登录'))
+
+// 登出后返回到登陆页
+const handleLogout = () => {
+  userStore.logout()
+  router.push('/login')
+}
 </script>
 
 <template>
@@ -38,13 +49,18 @@ const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
           <p class="shell-topbar__label">控制台</p>
           <h1>{{ currentTitle }}</h1>
         </div>
-        <RouterLink to="/login" class="shell-user">
-          <span class="shell-user__avatar">L</span>
-          <div>
-            <strong>刘同学</strong>
-            <p>后端转 AI 全栈</p>
-          </div>
-        </RouterLink>
+        <div class="shell-user">
+          <RouterLink to="/login" class="shell-user__profile">
+            <span class="shell-user__avatar">{{ displayUsername.slice(0, 1).toUpperCase() }}</span>
+            <div>
+              <strong>{{ displayUsername }}</strong>
+              <p>{{ displayRole }}</p>
+            </div>
+          </RouterLink>
+          <button v-if="userStore.isLoggedIn" type="button" class="shell-user__logout" @click="handleLogout">
+            退出
+          </button>
+        </div>
       </header>
 
       <main class="shell-content">

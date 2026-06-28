@@ -186,7 +186,7 @@ http://localhost:8000/health
 
 ### 任务清单
 
-- [ ] 安装并配置 `Pinia`
+- [x] 安装并配置 `Pinia`
 - [ ] 创建用户状态 `store`
 - [ ] 本地保存一个假的登录 token
 - [ ] 编写路由守卫

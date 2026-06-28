@@ -122,6 +122,13 @@ p {
   display: flex;
   align-items: center;
   gap: 12px;
+  color: #334155;
+}
+
+.shell-user__profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: 14px;
   color: #334155;
@@ -130,11 +137,11 @@ p {
     box-shadow 0.2s ease;
 }
 
-.shell-user:hover {
+.shell-user__profile:hover {
   background: rgba(148, 163, 184, 0.12);
 }
 
-.shell-user:focus-visible {
+.shell-user__profile:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
@@ -158,6 +165,31 @@ p {
 .shell-user p {
   font-size: 14px;
   color: #64748b;
+}
+
+.shell-user__logout {
+  height: 40px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 0 14px;
+  color: #334155;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.shell-user__logout:hover {
+  border-color: #94a3b8;
+  background: #f8fafc;
+}
+
+.shell-user__logout:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .shell-content {

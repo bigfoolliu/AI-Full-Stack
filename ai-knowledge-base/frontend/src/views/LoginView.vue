@@ -1,8 +1,24 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
 
+const router = useRouter()
+const userStore = useUserStore()
 const username = ref('')
 const password = ref('')
+
+const handleLogin = () => {
+  const trimmedUsername = username.value.trim()
+
+  if (!trimmedUsername) {
+    return
+  }
+
+  // 登陆成功后跳到 /dashboard
+  userStore.login(trimmedUsername)
+  router.push('/dashboard')
+}
 </script>
 
 <template>
@@ -16,7 +32,7 @@ const password = ref('')
         </p>
       </div>
 
-      <form class="login-form" @submit.prevent>
+      <form class="login-form" @submit.prevent="handleLogin">
         <label class="login-field">
           <span>用户名</span>
           <input v-model="username" type="text" placeholder="请输入用户名" autocomplete="username" />
@@ -24,19 +40,14 @@ const password = ref('')
 
         <label class="login-field">
           <span>密码</span>
-          <input
-            v-model="password"
-            type="password"
-            placeholder="请输入密码"
-            autocomplete="current-password"
-          />
+          <input v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
         </label>
 
         <button type="submit" class="login-submit">登录</button>
       </form>
 
       <p class="login-card__hint">
-        当前版本仅用于前端页面搭建，按钮暂不提交，也不会跳转。
+        当前版本使用前端假 token 完成 Day 3 登录闭环，后续 Day 4 再接真实接口。
       </p>
     </div>
   </section>
