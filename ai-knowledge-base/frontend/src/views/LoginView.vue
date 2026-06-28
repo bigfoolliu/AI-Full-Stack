@@ -8,16 +8,21 @@ const userStore = useUserStore()
 const username = ref('')
 const password = ref('')
 
-const handleLogin = () => {
-  const trimmedUsername = username.value.trim()  // 去除首尾空格的用户名
+const handleLogin = async () => {
+  const trimmedUsername = username.value.trim()
+  const trimmedPassword = password.value.trim()
 
-  if (!trimmedUsername) {
+  userStore.clearError()
+
+  if (!trimmedUsername || !trimmedPassword) {
     return
   }
 
-  // 登陆成功后跳到 /dashboard
-  userStore.login(trimmedUsername)
-  router.push('/dashboard')
+  const success = await userStore.login(trimmedUsername, trimmedPassword)
+
+  if (success) {
+    router.push('/dashboard')
+  }
 }
 </script>
 
@@ -28,7 +33,7 @@ const handleLogin = () => {
         <p class="login-card__eyebrow">Welcome Back</p>
         <h1>登录 AI 知识库</h1>
         <p class="login-card__description">
-          这是 Day 2 的静态登录表单版本，先把页面和链路搭起来，后面再接入真实登录逻辑。
+          输入后端 mock 账号密码，完成第一次真实前后端联调。
         </p>
       </div>
 
@@ -40,14 +45,18 @@ const handleLogin = () => {
 
         <label class="login-field">
           <span>密码</span>
-          <input id="passward" v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
+          <input id="password" v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
         </label>
 
-        <button type="submit" class="login-submit">登录</button>
+        <button type="submit" class="login-submit" :disabled="userStore.loginLoading">
+          {{ userStore.loginLoading ? '登录中...' : '登录' }}
+        </button>
       </form>
 
+      <p v-if="userStore.loginError" class="login-card__error">{{ userStore.loginError }}</p>
+
       <p class="login-card__hint">
-        当前版本使用前端假 token 完成 Day 3 登录闭环，后续 Day 4 再接真实接口。
+        当前 mock 账号：`admin`，密码：`123456`
       </p>
     </div>
   </section>

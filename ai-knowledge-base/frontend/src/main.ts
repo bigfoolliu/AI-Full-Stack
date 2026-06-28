@@ -9,6 +9,10 @@ const app = createApp(App);
 const pinia = createPinia();
 
 app.use(pinia);
-useUserStore(pinia).restore();
+const userStore = useUserStore(pinia);
+userStore.restore();
+if (userStore.token) {
+  void userStore.fetchMe();
+}
 app.use(router);
 app.mount("#app");

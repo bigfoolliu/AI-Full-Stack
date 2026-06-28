@@ -18,8 +18,8 @@ const pageTitleMap: Record<string, string> = {
 }
 
 const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
-const displayUsername = computed(() => userStore.username || '未登录用户')
-const displayRole = computed(() => (userStore.isLoggedIn ? '后端转 AI 全栈' : '点击登录'))
+const displayUsername = computed(() => userStore.nickname || userStore.username || '未登录用户')
+const displayRole = computed(() => (userStore.isLoggedIn ? '后端返回的真实用户信息' : '点击登录'))
 
 // 登出后返回到登陆页
 const handleLogout = () => {
