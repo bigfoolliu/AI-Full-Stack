@@ -1,0 +1,87 @@
+<h2>App.vue 后台壳子方向</h2>
+<p class="subtitle">目标是先做 Day 2 的最小后台壳子，只承载 <code>/dashboard</code> 和 <code>/knowledge-bases</code>。</p>
+
+<div class="cards">
+  <div class="card" data-choice="option-a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 A · 推荐</div>
+        <div class="mockup-body" style="display:flex; min-height:320px; background:#f4f7fb;">
+          <div style="width:220px; background:#0f172a; color:#e2e8f0; padding:20px 16px; box-sizing:border-box;">
+            <div style="font-size:18px; font-weight:700; margin-bottom:24px;">AI 知识库</div>
+            <div style="padding:10px 12px; border-radius:8px; background:#1e293b; margin-bottom:10px;">工作台</div>
+            <div style="padding:10px 12px; border-radius:8px; opacity:0.9;">知识库</div>
+          </div>
+          <div style="flex:1; display:flex; flex-direction:column;">
+            <div style="height:64px; background:#ffffff; border-bottom:1px solid #dbe2ea; display:flex; align-items:center; justify-content:space-between; padding:0 24px; box-sizing:border-box;">
+              <div style="font-size:18px; font-weight:700; color:#0f172a;">工作台</div>
+              <div style="font-size:14px; color:#475569;">刘同学</div>
+            </div>
+            <div style="padding:24px; display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+              <div class="placeholder" style="height:96px;">统计卡片</div>
+              <div class="placeholder" style="height:96px;">统计卡片</div>
+              <div class="placeholder" style="height:96px;">统计卡片</div>
+              <div class="placeholder" style="grid-column:1 / -1; height:132px;">主内容区域</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 A：经典后台壳子</h3>
+      <p>左侧固定菜单，顶部显示当前页面和用户信息，右侧主内容区承载页面。最稳，最适合 Day 2。</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="option-b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">方案 B</div>
+        <div class="mockup-body" style="min-height:320px; background:#f8fafc;">
+          <div style="height:68px; background:#ffffff; border-bottom:1px solid #dbe2ea; display:flex; align-items:center; justify-content:space-between; padding:0 24px; box-sizing:border-box;">
+            <div style="display:flex; gap:20px; align-items:center;">
+              <div style="font-size:18px; font-weight:700; color:#0f172a;">AI 知识库</div>
+              <div style="font-size:14px; color:#334155;">工作台</div>
+              <div style="font-size:14px; color:#334155;">知识库</div>
+            </div>
+            <div style="font-size:14px; color:#475569;">刘同学</div>
+          </div>
+          <div style="padding:24px; display:grid; grid-template-columns:240px 1fr; gap:20px;">
+            <div class="placeholder" style="height:240px;">筛选 / 快捷入口</div>
+            <div style="display:grid; gap:16px;">
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:16px;">
+                <div class="placeholder" style="height:96px;">统计卡片</div>
+                <div class="placeholder" style="height:96px;">统计卡片</div>
+                <div class="placeholder" style="height:96px;">统计卡片</div>
+              </div>
+              <div class="placeholder" style="height:128px;">主内容区域</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>方案 B：顶部优先壳子</h3>
+      <p>导航都放到顶部，页面更轻，但后面页面变多时可扩展性稍差。</p>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top:24px;">
+  <div class="pros">
+    <h4>我推荐方案 A 的原因</h4>
+    <ul>
+      <li>更像真实后台系统，和知识库管理页面匹配。</li>
+      <li>后面接 Pinia、权限、菜单高亮都更自然。</li>
+      <li>Day 2 只做壳子时，结构最清楚，不容易反复返工。</li>
+    </ul>
+  </div>
+  <div class="cons">
+    <h4>方案 B 的取舍</h4>
+    <ul>
+      <li>视觉更轻，但更像内容站或轻管理页。</li>
+      <li>知识库、文档、任务页一多，顶部导航容易拥挤。</li>
+      <li>后续做后台侧边功能扩展时会再拆一次布局。</li>
+    </ul>
+  </div>
+</div>
