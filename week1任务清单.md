@@ -295,14 +295,14 @@ http://localhost:8000/health
 
 ### 任务清单
 
-- [ ] 安装并封装 `axios`
-- [ ] 配置 `baseURL`
-- [ ] 增加请求拦截器
-- [ ] 登录页调用 `POST /api/login`
-- [ ] 登录成功后保存 token
-- [ ] 页面初始化调用 `GET /api/me`
-- [ ] 顶部栏显示真实用户信息
-- [ ] 增加登录失败提示
+- [x] 安装并封装 `axios`
+- [x] 配置 `baseURL`
+- [x] 增加请求拦截器
+- [x] 登录页调用 `POST /api/login`
+- [x] 登录成功后保存 token
+- [x] 页面初始化调用 `GET /api/me`
+- [x] 顶部栏显示真实用户信息
+- [x] 增加登录失败提示
 
 ### 今日重点
 
