@@ -2,5 +2,5 @@
 </script>
 
 <template>
-  <h1>HomeView</h1>
+  <h1>Konwledge-bases</h1>
 </template>

@@ -2,19 +2,24 @@
 </script>
 
 <template>
-  <h1>Hello App!</h1>
-  <p>
-    <strong>Current route path:</strong> {{ $route.fullPath }}
-  </p>
-  <nav>
-    <div>
-      <RouterLink to="/">Go to Home</RouterLink>
-    </div>
-    <div>
-      <RouterLink to="/about">Go to About</RouterLink>
-    </div>
-  </nav>
-  <main>
+  <div>
+    <router-link to="/">首页</router-link>
+  </div>
+  <div>
+    <router-link to="/about">关于</router-link>
+  </div>
+  <div>
+    <router-link to="/login">登录</router-link>
+  </div>
+  <div>
+    <router-link to="/dashboard">面板</router-link>
+  </div>
+  <div>
+    <router-link to="/knowledge-bases">知识库</router-link>
+  </div>
+
+
+  <div>
     <RouterView />
-  </main>
+  </div>
 </template>
