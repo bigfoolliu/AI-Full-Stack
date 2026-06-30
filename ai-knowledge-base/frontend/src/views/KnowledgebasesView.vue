@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import {
   getKnowledgeBases,
   type KnowledgeBaseItem,
 } from "../api/knowledge-bases";
 
+const router = useRouter();
 const knowledgeBases = ref<KnowledgeBaseItem[]>([]);
 const loading = ref(true);
 const error = ref("");
@@ -34,6 +36,18 @@ const fetchKnowledgeBases = async () => {
 onMounted(() => {
   void fetchKnowledgeBases();
 });
+
+const goToCreate = () => {
+  router.push("/knowledge-bases/create");
+};
+
+const goToDocuments = (id: number) => {
+  router.push(`/knowledge-bases/${id}/documents`);
+};
+
+const goToUpload = (id: number) => {
+  router.push(`/knowledge-bases/${id}/upload`);
+};
 </script>
 
 <template>
@@ -47,7 +61,9 @@ onMounted(() => {
 
     <div class="kb-toolbar">
       <input class="kb-search" type="text" placeholder="搜索知识库名称" />
-      <button type="button" class="kb-create-button">新建知识库</button>
+      <button type="button" class="kb-create-button" @click="goToCreate">
+        新建知识库
+      </button>
     </div>
 
     <div v-if="loading" class="kb-state-card">
@@ -87,8 +103,8 @@ onMounted(() => {
             <td>{{ item.created_at }}</td>
             <td>
               <div class="kb-actions">
-                <button type="button">查看</button>
-                <button type="button">编辑</button>
+                <button type="button" @click="goToDocuments(item.id)">查看</button>
+                <button type="button" @click="goToUpload(item.id)">上传</button>
               </div>
             </td>
           </tr>

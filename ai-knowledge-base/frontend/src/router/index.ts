@@ -5,6 +5,9 @@ import AboutView from "../views/AboutView.vue";
 import DashboardView from "../views/DashboardView.vue";
 import KnowledgebasesView from "../views/KnowledgebasesView.vue";
 import LoginView from "../views/LoginView.vue";
+import KnowledgeBaseCreateView from "../views/KnowledgeBaseCreateView.vue";
+import KnowledgeBaseDocumentsView from "../views/KnowledgeBaseDocumentsView.vue";
+import KnowledgeBaseUploadView from "../views/KnowledgeBaseUploadView.vue";
 import { useUserStore } from "../stores/user";
 
 const routes = [
@@ -19,6 +22,21 @@ const routes = [
   {
     path: "/knowledge-bases",
     component: KnowledgebasesView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/knowledge-bases/create",
+    component: KnowledgeBaseCreateView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/knowledge-bases/:id/documents",
+    component: KnowledgeBaseDocumentsView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/knowledge-bases/:id/upload",
+    component: KnowledgeBaseUploadView,
     meta: { requiresAuth: true },
   },
 ];

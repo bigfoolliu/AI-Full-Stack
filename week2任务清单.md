@@ -115,12 +115,12 @@ ai-knowledge-base/
 
 ### 任务清单
 
-- [ ] 明确知识库页面之间的跳转关系
-- [ ] 在前端路由中增加 `/knowledge-bases/create`
-- [ ] 在前端路由中增加 `/knowledge-bases/:id/documents`
-- [ ] 在前端路由中增加 `/knowledge-bases/:id/upload`
-- [ ] 在知识库列表页增加跳转入口
-- [ ] 为文档列表页和上传页创建基础占位视图
+- [x] 明确知识库页面之间的跳转关系
+- [x] 在前端路由中增加 `/knowledge-bases/create`
+- [x] 在前端路由中增加 `/knowledge-bases/:id/documents`
+- [x] 在前端路由中增加 `/knowledge-bases/:id/upload`
+- [x] 在知识库列表页增加跳转入口
+- [x] 为文档列表页和上传页创建基础占位视图
 
 ### 今日输出
 
