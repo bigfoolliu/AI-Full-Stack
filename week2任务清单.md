@@ -229,12 +229,12 @@ ai-knowledge-base/
 
 ### 任务清单
 
-- [ ] 后端增加 `POST /api/knowledge-bases/{id}/documents`
-- [ ] 后端增加 `GET /api/knowledge-bases/{id}/documents`
-- [ ] 前端上传页增加文件选择区域
-- [ ] 前端上传页增加上传按钮
-- [ ] 上传页显示最小状态说明
-- [ ] 文档列表页可展示 mock 文档记录
+- [x] 后端增加 `POST /api/knowledge-bases/{id}/documents`
+- [x] 后端增加 `GET /api/knowledge-bases/{id}/documents`
+- [x] 前端上传页增加文件选择区域
+- [x] 前端上传页增加上传按钮
+- [x] 上传页显示最小状态说明
+- [x] 文档列表页可展示 mock 文档记录
 
 ### 本日重点
 

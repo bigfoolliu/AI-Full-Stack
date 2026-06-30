@@ -30,6 +30,32 @@ MOCK_KNOWLEDGE_BASES = [
     ),
 ]
 
+MOCK_DOCUMENTS = {
+    1: [
+        {
+            "id": 1,
+            "name": "产品介绍.pdf",
+            "status": "已完成",
+            "updated_at": "2026-07-01 09:30:00",
+        },
+        {
+            "id": 2,
+            "name": "FAQ_v2.docx",
+            "status": "解析中",
+            "updated_at": "2026-07-01 10:05:00",
+        },
+    ],
+    2: [
+        {
+            "id": 1,
+            "name": "AI面试题合集.txt",
+            "status": "待处理",
+            "updated_at": "2026-07-01 11:15:00",
+        }
+    ],
+    3: [],
+}
+
 
 @router.get("/knowledge-bases", response_model=ApiResponse)
 def get_knowledge_bases() -> ApiResponse:
@@ -64,5 +90,39 @@ def get_knowledge_base_detail(knowledge_base_id: int) -> ApiResponse:
     for item in MOCK_KNOWLEDGE_BASES:
         if item.id == knowledge_base_id:
             return ApiResponse(code=0, message="ok", data=item)
+
+    return ApiResponse(code=1, message="知识库不存在", data=None)
+
+
+@router.get("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
+def get_knowledge_base_documents(knowledge_base_id: int) -> ApiResponse:
+    for item in MOCK_KNOWLEDGE_BASES:
+        if item.id == knowledge_base_id:
+            return ApiResponse(
+                code=0,
+                message="ok",
+                data=MOCK_DOCUMENTS.get(knowledge_base_id, []),
+            )
+
+    return ApiResponse(code=1, message="知识库不存在", data=None)
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
+def upload_knowledge_base_document(
+    knowledge_base_id: int,
+    payload: dict,
+) -> ApiResponse:
+    for item in MOCK_KNOWLEDGE_BASES:
+        if item.id == knowledge_base_id:
+            current_documents = MOCK_DOCUMENTS.setdefault(knowledge_base_id, [])
+            next_id = max((doc["id"] for doc in current_documents), default=0) + 1
+            created_document = {
+                "id": next_id,
+                "name": payload.get("name", f"document-{next_id}.txt"),
+                "status": "待处理",
+                "updated_at": "2026-07-01 15:00:00",
+            }
+            current_documents.append(created_document)
+            return ApiResponse(code=0, message="ok", data=created_document)
 
     return ApiResponse(code=1, message="知识库不存在", data=None)
