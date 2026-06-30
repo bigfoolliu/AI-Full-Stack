@@ -7,3 +7,8 @@ class KnowledgeBaseItem(BaseModel):
     description: str
     document_count: int
     created_at: str
+
+
+class CreateKnowledgeBaseRequest(BaseModel):
+    name: str
+    description: str

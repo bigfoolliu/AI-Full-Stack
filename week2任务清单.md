@@ -202,12 +202,12 @@ ai-knowledge-base/
 
 ### 任务清单
 
-- [ ] 增加 `POST /api/knowledge-bases`
-- [ ] 增加 `GET /api/knowledge-bases/{id}`
-- [ ] 统一知识库相关响应结构
-- [ ] 增加知识库 schema
-- [ ] 使用 mock 数据或内存数据结构返回结果
-- [ ] 检查接口命名是否统一
+- [x] 增加 `POST /api/knowledge-bases`
+- [x] 增加 `GET /api/knowledge-bases/{id}`
+- [x] 统一知识库相关响应结构
+- [x] 增加知识库 schema
+- [x] 使用 mock 数据或内存数据结构返回结果
+- [x] 检查接口命名是否统一
 
 ### 本日接口清单
 
