@@ -256,11 +256,11 @@ ai-knowledge-base/
 
 ### 任务清单
 
-- [ ] 新建知识库页调用 `POST /api/knowledge-bases`
-- [ ] 文档列表页调用 `GET /api/knowledge-bases/{id}/documents`
-- [ ] 页面根据接口结果渲染数据
-- [ ] 为新建知识库页增加成功或失败提示
-- [ ] 为文档页增加 loading 和空状态
+- [x] 新建知识库页调用 `POST /api/knowledge-bases`
+- [x] 文档列表页调用 `GET /api/knowledge-bases/{id}/documents`
+- [x] 页面根据接口结果渲染数据
+- [x] 为新建知识库页增加成功或失败提示
+- [x] 为文档页增加 loading 和空状态
 
 ### 验收标准
 

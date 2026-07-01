@@ -6,6 +6,11 @@ interface ApiResponse<T> {
   data: T;
 }
 
+export interface CreateKnowledgeBasePayload {
+  name: string;
+  description: string;
+}
+
 export interface KnowledgeBaseItem {
   id: number;
   name: string;
@@ -14,9 +19,33 @@ export interface KnowledgeBaseItem {
   created_at: string;
 }
 
+export interface KnowledgeBaseDocumentItem {
+  id: number;
+  name: string;
+  status: string;
+  updated_at: string;
+}
+
 export const getKnowledgeBases = async () => {
   const response = await http.get<ApiResponse<KnowledgeBaseItem[]>>(
     "/api/knowledge-bases"
+  );
+  return response.data;
+};
+
+export const createKnowledgeBase = async (
+  payload: CreateKnowledgeBasePayload
+) => {
+  const response = await http.post<ApiResponse<KnowledgeBaseItem>>(
+    "/api/knowledge-bases",
+    payload
+  );
+  return response.data;
+};
+
+export const getKnowledgeBaseDocuments = async (id: string | number) => {
+  const response = await http.get<ApiResponse<KnowledgeBaseDocumentItem[]>>(
+    `/api/knowledge-bases/${id}/documents`
   );
   return response.data;
 };

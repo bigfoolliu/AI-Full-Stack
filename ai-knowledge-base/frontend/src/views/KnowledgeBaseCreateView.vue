@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { createKnowledgeBase } from "../api/knowledge-bases";
 
 const router = useRouter();
 
@@ -8,12 +9,13 @@ const name = ref("");
 const description = ref("");
 const errorMessage = ref("");
 const successMessage = ref("");
+const loading = ref(false);
 
 const goBack = () => {
   router.push("/knowledge-bases");
 };
 
-const handleSubmit = () => {
+const handleSubmit = async () => {
   errorMessage.value = "";
   successMessage.value = "";
 
@@ -22,7 +24,25 @@ const handleSubmit = () => {
     return;
   }
 
-  successMessage.value = "知识库表单已提交（当前为前端占位版本，后续将接入真实创建接口）";
+  loading.value = true;
+
+  try {
+    const result = await createKnowledgeBase({
+      name: name.value.trim(),
+      description: description.value.trim(),
+    });
+
+    if (result.code !== 0 || !result.data) {
+      errorMessage.value = result.message || "创建知识库失败";
+      return;
+    }
+
+    successMessage.value = `知识库“${result.data.name}”创建成功，当前 ID：${result.data.id}`;
+  } catch {
+    errorMessage.value = "创建知识库请求失败，请稍后重试";
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
@@ -58,8 +78,8 @@ const handleSubmit = () => {
         <button type="button" class="kb-secondary-button" @click="goBack">
           返回列表
         </button>
-        <button type="button" class="kb-primary-button" @click="handleSubmit">
-          创建知识库
+        <button type="button" class="kb-primary-button" :disabled="loading" @click="handleSubmit">
+          {{ loading ? "创建中..." : "创建知识库" }}
         </button>
       </div>
     </div>

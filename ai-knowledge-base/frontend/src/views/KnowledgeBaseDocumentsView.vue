@@ -1,32 +1,19 @@
 <script setup lang="ts">
-import { useRoute } from "vue-router";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { useRoute } from "vue-router";
+import {
+  getKnowledgeBaseDocuments,
+  type KnowledgeBaseDocumentItem,
+} from "../api/knowledge-bases";
 
 const route = useRoute();
 const router = useRouter();
 
 const knowledgeBaseId = route.params.id;
-
-const documents = [
-  {
-    id: 1,
-    name: "产品介绍.pdf",
-    status: "已完成",
-    updatedAt: "2026-07-01 09:30",
-  },
-  {
-    id: 2,
-    name: "FAQ_v2.docx",
-    status: "解析中",
-    updatedAt: "2026-07-01 10:05",
-  },
-  {
-    id: 3,
-    name: "售后流程说明.txt",
-    status: "待处理",
-    updatedAt: "2026-06-30 18:20",
-  },
-];
+const documents = ref<KnowledgeBaseDocumentItem[]>([]);
+const loading = ref(true);
+const errorMessage = ref("");
 
 const goBack = () => {
   router.push("/knowledge-bases");
@@ -36,11 +23,37 @@ const goToUpload = () => {
   router.push(`/knowledge-bases/${knowledgeBaseId}/upload`);
 };
 
+const fetchDocuments = async () => {
+  loading.value = true;
+  errorMessage.value = "";
+
+  try {
+    const result = await getKnowledgeBaseDocuments(String(knowledgeBaseId));
+
+    if (result.code !== 0 || !result.data) {
+      documents.value = [];
+      errorMessage.value = result.message || "获取文档列表失败";
+      return;
+    }
+
+    documents.value = result.data;
+  } catch {
+    documents.value = [];
+    errorMessage.value = "请求文档列表失败，请稍后重试";
+  } finally {
+    loading.value = false;
+  }
+};
+
 const getStatusClass = (status: string) => {
   if (status === "已完成") return "kb-doc-status--success";
   if (status === "解析中") return "kb-doc-status--processing";
   return "kb-doc-status--pending";
 };
+
+onMounted(() => {
+  void fetchDocuments();
+});
 </script>
 
 <template>
@@ -66,7 +79,20 @@ const getStatusClass = (status: string) => {
       </button>
     </div>
 
-    <div class="kb-doc-table-card">
+    <div v-if="loading" class="kb-state-card">
+      <p>文档列表加载中...</p>
+    </div>
+
+    <div v-else-if="errorMessage" class="kb-state-card kb-state-card--error">
+      <p>{{ errorMessage }}</p>
+    </div>
+
+    <div v-else-if="documents.length === 0" class="kb-state-card">
+      <strong>当前还没有文档</strong>
+      <p>先上传一个文档，后续这里会展示真实处理状态。</p>
+    </div>
+
+    <div v-else class="kb-doc-table-card">
       <table class="kb-doc-table">
         <thead>
           <tr>
@@ -84,7 +110,7 @@ const getStatusClass = (status: string) => {
                 {{ item.status }}
               </span>
             </td>
-            <td>{{ item.updatedAt }}</td>
+            <td>{{ item.updated_at }}</td>
             <td>
               <div class="kb-actions">
                 <button type="button">查看</button>
