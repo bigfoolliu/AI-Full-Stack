@@ -3,7 +3,7 @@ import { createWebHistory, createRouter } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import AboutView from "../views/AboutView.vue";
 import DashboardView from "../views/DashboardView.vue";
-import KnowledgebasesView from "../views/KnowledgebasesView.vue";
+import KnowledgeBasesView from "../views/KnowledgeBasesView.vue";
 import LoginView from "../views/LoginView.vue";
 import KnowledgeBaseCreateView from "../views/KnowledgeBaseCreateView.vue";
 import KnowledgeBaseDocumentsView from "../views/KnowledgeBaseDocumentsView.vue";
@@ -21,7 +21,7 @@ const routes = [
   },
   {
     path: "/knowledge-bases",
-    component: KnowledgebasesView,
+    component: KnowledgeBasesView,
     meta: { requiresAuth: true },
   },
   {
