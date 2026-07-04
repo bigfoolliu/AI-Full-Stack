@@ -99,12 +99,12 @@ frontend/src/
 
 ### 任务清单
 
-- [ ] 检查并确保 Element Plus 已全局注册（main.ts）
-- [ ] 用 `ElTable` + `ElTableColumn` 替换 `KnowledgeBasesView.vue` 的手写 `<table>`
-- [ ] 用 `ElButton` 替换手写按钮
-- [ ] 用 `ElMessage` 替换所有页面中的手写错误/成功提示
-- [ ] 用 `ElTag` 替换文档状态标签
-- [ ] 用 `ElCard` 替换页面中的卡片容器样式
+- [x] 检查并确保 Element Plus 已全局注册（main.ts）
+- [x] 用 `ElTable` + `ElTableColumn` 替换 `KnowledgeBasesView.vue` 的手写 `<table>`
+- [x] 用 `ElButton` 替换手写按钮
+- [x] 用 `ElMessage` 替换所有页面中的手写错误/成功提示
+- [x] 用 `ElTag` 替换文档状态标签
+- [x] 用 `ElCard` 替换页面中的卡片容器样式
 
 ### 今日输出
 

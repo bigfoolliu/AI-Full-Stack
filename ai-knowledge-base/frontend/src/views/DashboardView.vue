@@ -12,7 +12,7 @@ const recentKnowledgeBases = [
 ]
 
 const todayTasks = [
-  '检查“面试题知识库”的解析状态',
+  '检查"面试题知识库"的解析状态',
   '补充项目规范文档的最新版本',
   '准备 Day 3 的登录态和路由守卫改造',
 ]
@@ -31,39 +31,39 @@ const todayTasks = [
     </header>
 
     <div class="dashboard-summary">
-      <article v-for="item in summaryCards" :key="item.label" class="dashboard-card">
-        <p class="dashboard-card__label">{{ item.label }}</p>
-        <strong>{{ item.value }}</strong>
-        <span>{{ item.note }}</span>
-      </article>
+      <el-card v-for="item in summaryCards" :key="item.label" shadow="hover">
+        <div class="dashboard-card">
+          <p class="dashboard-card__label">{{ item.label }}</p>
+          <strong>{{ item.value }}</strong>
+          <span>{{ item.note }}</span>
+        </div>
+      </el-card>
     </div>
 
     <div class="dashboard-panels">
-      <section class="dashboard-panel">
-        <header class="dashboard-panel__header">
-          <h3>最近更新的知识库</h3>
-          <p>帮助你快速回到最近维护的资料集合。</p>
-        </header>
+      <el-card shadow="never">
+        <template #header>
+          <span>最近更新的知识库</span>
+        </template>
         <ul class="dashboard-list">
           <li v-for="item in recentKnowledgeBases" :key="item.name" class="dashboard-list__item">
             <div>
               <strong>{{ item.name }}</strong>
               <p>{{ item.time }}</p>
             </div>
-            <span>{{ item.status }}</span>
+            <el-tag size="small">{{ item.status }}</el-tag>
           </li>
         </ul>
-      </section>
+      </el-card>
 
-      <section class="dashboard-panel">
-        <header class="dashboard-panel__header">
-          <h3>今日待处理</h3>
-          <p>把最小闭环先做完，后面接接口时会顺很多。</p>
-        </header>
+      <el-card shadow="never">
+        <template #header>
+          <span>今日待处理</span>
+        </template>
         <ul class="dashboard-todo">
           <li v-for="task in todayTasks" :key="task">{{ task }}</li>
         </ul>
-      </section>
+      </el-card>
     </div>
   </section>
 </template>

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import { createKnowledgeBase } from "../api/knowledge-bases";
 
 const router = useRouter();
 
 const name = ref("");
 const description = ref("");
-const errorMessage = ref("");
-const successMessage = ref("");
 const loading = ref(false);
 
 const goBack = () => {
@@ -16,11 +15,8 @@ const goBack = () => {
 };
 
 const handleSubmit = async () => {
-  errorMessage.value = "";
-  successMessage.value = "";
-
   if (!name.value.trim()) {
-    errorMessage.value = "知识库名称不能为空";
+    ElMessage.warning("知识库名称不能为空");
     return;
   }
 
@@ -33,13 +29,14 @@ const handleSubmit = async () => {
     });
 
     if (result.code !== 0 || !result.data) {
-      errorMessage.value = result.message || "创建知识库失败";
+      ElMessage.error(result.message || "创建知识库失败");
       return;
     }
 
-    successMessage.value = `知识库“${result.data.name}”创建成功，当前 ID：${result.data.id}`;
+    ElMessage.success(`知识库“${result.data.name}”创建成功`);
+    router.push("/knowledge-bases");
   } catch {
-    errorMessage.value = "创建知识库请求失败，请稍后重试";
+    ElMessage.error("创建知识库请求失败，请稍后重试");
   } finally {
     loading.value = false;
   }
@@ -50,38 +47,32 @@ const handleSubmit = async () => {
   <section class="kb-form-page">
     <header class="kb-form-page__header">
       <h2>新建知识库</h2>
-      <p>先把知识库创建页的表单结构搭出来，后续再接入真实创建接口与创建成功后的流转。</p>
+      <p>创建一个新的知识库来管理文档资料。</p>
     </header>
 
-    <div class="kb-form-card">
-      <div class="kb-form-card__body">
-        <label class="kb-form-field">
-          <span>知识库名称</span>
-          <input v-model="name" type="text" placeholder="例如：产品知识库" maxlength="50" />
-        </label>
-
-        <label class="kb-form-field">
-          <span>知识库描述</span>
-          <textarea v-model="description" rows="5" placeholder="简单描述这个知识库的用途、资料范围或目标用户" maxlength="200" />
-        </label>
-
-        <p v-if="errorMessage" class="kb-form-message kb-form-message--error">
-          {{ errorMessage }}
-        </p>
-
-        <p v-if="successMessage" class="kb-form-message kb-form-message--success">
-          {{ successMessage }}
-        </p>
-      </div>
+    <el-card class="kb-form-card">
+      <el-form label-width="100" label-position="top">
+        <el-form-item label="知识库名称" required>
+          <el-input v-model="name" placeholder="例如：产品知识库" maxlength="50" />
+        </el-form-item>
+        <el-form-item label="知识库描述">
+          <el-input
+            v-model="description"
+            type="textarea"
+            :rows="5"
+            placeholder="简单描述这个知识库的用途、资料范围或目标用户"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
 
       <div class="kb-form-actions">
-        <button type="button" class="kb-secondary-button" @click="goBack">
-          返回列表
-        </button>
-        <button type="button" class="kb-primary-button" :disabled="loading" @click="handleSubmit">
+        <el-button @click="goBack">返回列表</el-button>
+        <el-button type="primary" :loading="loading" @click="handleSubmit">
           {{ loading ? "创建中..." : "创建知识库" }}
-        </button>
+        </el-button>
       </div>
-    </div>
+    </el-card>
   </section>
 </template>

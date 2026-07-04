@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import {
   getKnowledgeBases,
   type KnowledgeBaseItem,
@@ -9,25 +10,23 @@ import {
 const router = useRouter();
 const knowledgeBases = ref<KnowledgeBaseItem[]>([]);
 const loading = ref(true);
-const error = ref("");
 
 const fetchKnowledgeBases = async () => {
   loading.value = true;
-  error.value = "";
 
   try {
     const result = await getKnowledgeBases();
 
     if (result.code !== 0 || !result.data) {
+      ElMessage.error(result.message || "获取知识库列表失败");
       knowledgeBases.value = [];
-      error.value = result.message || "获取知识库列表失败";
       return;
     }
 
     knowledgeBases.value = result.data;
   } catch {
+    ElMessage.error("请求知识库列表失败，请稍后重试");
     knowledgeBases.value = [];
-    error.value = "请求知识库列表失败，请稍后重试";
   } finally {
     loading.value = false;
   }
@@ -55,65 +54,45 @@ const goToUpload = (id: number) => {
     <header class="kb-page__header">
       <div>
         <h2>知识库列表</h2>
-        <p>集中管理你的文档知识库，后续这里会接入真实搜索、上传和状态流转能力。</p>
+        <p>集中管理你的文档知识库。</p>
       </div>
     </header>
 
     <div class="kb-toolbar">
-      <input class="kb-search" type="text" placeholder="搜索知识库名称" />
-      <button type="button" class="kb-create-button" @click="goToCreate">
+      <el-input
+        class="kb-search"
+        placeholder="搜索知识库名称"
+        clearable
+      />
+      <el-button type="primary" @click="goToCreate">
         新建知识库
-      </button>
+      </el-button>
     </div>
 
-    <div v-if="loading" class="kb-state-card">
-      <p>知识库列表加载中...</p>
-    </div>
-
-    <div v-else-if="error" class="kb-state-card kb-state-card--error">
-      <p>{{ error }}</p>
-    </div>
-
-    <div v-else-if="knowledgeBases.length === 0" class="kb-state-card">
-      <strong>还没有知识库</strong>
-      <p>先创建第一个知识库，后续这里会显示真实列表数据。</p>
-    </div>
-
-    <div v-else class="kb-table-card">
-      <table class="kb-table">
-        <thead>
-          <tr>
-            <th>名称</th>
-            <th>描述</th>
-            <th>文档数量</th>
-            <th>创建时间</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in knowledgeBases" :key="item.id">
-            <td>
-              <div class="kb-name-cell">
-                <strong>{{ item.name }}</strong>
-                <span>知识库 ID：{{ item.id }}</span>
-              </div>
-            </td>
-            <td>{{ item.description }}</td>
-            <td>{{ item.document_count }}</td>
-            <td>{{ item.created_at }}</td>
-            <td>
-              <div class="kb-actions">
-                <button type="button" @click="goToDocuments(item.id)">查看</button>
-                <button type="button" @click="goToUpload(item.id)">上传</button>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <p class="kb-page__hint">
-      当前列表已经由后端接口驱动，后续可继续扩展搜索、分页和新建知识库流程。
-    </p>
+    <el-table
+      v-loading="loading"
+      :data="knowledgeBases"
+      style="width: 100%"
+      empty-text="还没有知识库，先创建一个吧"
+      stripe
+    >
+      <el-table-column label="名称" min-width="180">
+        <template #default="{ row }">
+          <div class="kb-name-cell">
+            <strong>{{ row.name }}</strong>
+            <span>知识库 ID：{{ row.id }}</span>
+          </div>
+        </template>
+      </el-table-column>
+      <el-table-column prop="description" label="描述" min-width="200" />
+      <el-table-column prop="document_count" label="文档数量" width="100" />
+      <el-table-column prop="created_at" label="创建时间" width="180" />
+      <el-table-column label="操作" width="150">
+        <template #default="{ row }">
+          <el-button size="small" @click="goToDocuments(row.id)">查看</el-button>
+          <el-button size="small" @click="goToUpload(row.id)">上传</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
   </section>
 </template>

@@ -2,21 +2,18 @@
 import { ref } from "vue";
 import { useRoute } from "vue-router";
 import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
+import { UploadFilled } from "@element-plus/icons-vue";
 
 const route = useRoute();
 const router = useRouter();
 
 const selectedFileName = ref("");
-const errorMessage = ref("");
-const successMessage = ref("");
 
 const handleFileChange = (event: Event) => {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
-
   selectedFileName.value = file?.name ?? "";
-  errorMessage.value = "";
-  successMessage.value = "";
 };
 
 const goBack = () => {
@@ -24,16 +21,12 @@ const goBack = () => {
 };
 
 const handleUpload = () => {
-  errorMessage.value = "";
-  successMessage.value = "";
-
   if (!selectedFileName.value) {
-    errorMessage.value = "请先选择一个要上传的文档";
+    ElMessage.warning("请先选择一个要上传的文档");
     return;
   }
 
-  successMessage.value =
-    "文档上传入口已触发（当前为前端占位版本，后续将接入真实上传接口）";
+  ElMessage.success("文档上传入口已触发（当前为前端占位版本，后续将接入真实上传接口）");
 };
 </script>
 
@@ -45,32 +38,26 @@ const handleUpload = () => {
       <p>先把文档上传入口和页面交互搭出来，后续再接入真实文件上传与解析流程。</p>
     </header>
 
-    <div class="kb-upload-card">
-      <label class="kb-upload-field">
-        <span>选择文档</span>
-        <input type="file" @change="handleFileChange" />
-      </label>
+    <el-card class="kb-upload-card">
+      <el-upload
+        drag
+        action=""
+        :auto-upload="false"
+        :show-file-list="true"
+        @change="handleFileChange"
+      >
+        <el-icon class="el-icon--upload" :size="40">
+          <UploadFilled />
+        </el-icon>
+        <div class="el-upload__text">
+          将文件拖拽到此处，或 <em>点击选择文件</em>
+        </div>
+      </el-upload>
 
-      <p class="kb-upload-file" v-if="selectedFileName">
-        当前选择：{{ selectedFileName }}
-      </p>
-
-      <p v-if="errorMessage" class="kb-form-message kb-form-message--error">
-        {{ errorMessage }}
-      </p>
-
-      <p v-if="successMessage" class="kb-form-message kb-form-message--success">
-        {{ successMessage }}
-      </p>
-
-      <div class="kb-form-actions">
-        <button type="button" class="kb-secondary-button" @click="goBack">
-          返回文档列表
-        </button>
-        <button type="button" class="kb-primary-button" @click="handleUpload">
-          上传文档
-        </button>
+      <div class="kb-form-actions" style="margin-top: 20px">
+        <el-button @click="goBack">返回文档列表</el-button>
+        <el-button type="primary" @click="handleUpload">上传文档</el-button>
       </div>
-    </div>
+    </el-card>
   </section>
 </template>
