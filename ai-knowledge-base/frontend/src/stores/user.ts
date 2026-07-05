@@ -53,8 +53,8 @@ export const useUserStore = defineStore("user", () => {
       nickname.value = result.data.user.nickname;
       persist();
       return true;
-    } catch {
-      loginError.value = "登录请求失败，请稍后重试";
+    } catch (error: any) {
+      loginError.value = error?.response?.data?.detail || "登录请求失败，请稍后重试";
       return false;
     } finally {
       loginLoading.value = false;

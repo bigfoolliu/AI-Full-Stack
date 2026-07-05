@@ -223,23 +223,23 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 创建 `app/core/security.py`
+- [x] 创建 `app/core/security.py`
   - `create_access_token(data: dict)` — 生成 JWT（使用 `jose.jwt.encode` + exp）
   - `verify_password(plain: str, hashed: str) -> bool` — passlib bcrypt 验证
   - `get_password_hash(password: str) -> str` — passlib bcrypt 哈希
   - `get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db))` — 解析 Token 查 DB
   - 异常处理：Token 过期/无效 → HTTPException 401
-- [ ] 重写 `POST /api/login`
+- [x] 重写 `POST /api/login`
   - 验证用户名密码（查 User 表 + verify_password）
   - 返回 JWT access_token + user 信息
   - 密码错误返回 401
-- [ ] 重写 `GET /api/me`
+- [x] 重写 `GET /api/me`
   - 使用 `get_current_user` 依赖
   - 返回当前用户 UserInfo
-- [ ] 知识库和文档接口添加 `Depends(get_current_user)` 保护
-- [ ] init_db 时创建默认管理员用户（密码哈希存储，username=admin, password=123456）
-- [ ] 删除 `MOCK_USERNAME`、`MOCK_PASSWORD`、`MOCK_TOKEN`、`MOCK_USER` 配置项
-- [ ] 用 curl 验证登录、鉴权、401 流程
+- [x] 知识库和文档接口添加 `Depends(get_current_user)` 保护
+- [x] init_db 时创建默认管理员用户（密码哈希存储，username=admin, password=123456）
+- [x] 删除 `MOCK_USERNAME`、`MOCK_PASSWORD`、`MOCK_TOKEN`、`MOCK_USER` 配置项
+- [x] 用 curl 验证登录、鉴权、401 流程
 
 #### 今日重点
 
@@ -248,11 +248,11 @@ frontend/src/
 
 #### 验收标准
 
-- [ ] 使用错误密码登录返回 401
-- [ ] 正确登录后返回有效的 JWT Token
-- [ ] 使用 Token 可调用 `/api/me` 获取用户信息
-- [ ] 无 Token 或 Token 过期返回 401
-- [ ] 知识库接口在无 Token 时返回 401
+- [x] 使用错误密码登录返回 401
+- [x] 正确登录后返回有效的 JWT Token
+- [x] 使用 Token 可调用 `/api/me` 获取用户信息
+- [x] 无 Token 或 Token 过期返回 401
+- [x] 知识库接口在无 Token 时返回 401
 
 ---
 

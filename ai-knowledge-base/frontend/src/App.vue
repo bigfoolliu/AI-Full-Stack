@@ -33,7 +33,7 @@ const pageTitleMap: Record<string, string> = {
 
 const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
 const displayUsername = computed(() => userStore.nickname || userStore.username || '未登录用户')
-const displayRole = computed(() => (userStore.isLoggedIn ? '后端返回的真实用户信息' : '点击登录'))
+const displayRole = computed(() => (userStore.isLoggedIn ? '已登录' : '点击登录'))
 
 const handleLogout = () => {
   userStore.logout()
