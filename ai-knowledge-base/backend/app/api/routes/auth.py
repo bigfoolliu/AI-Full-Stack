@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.security import (
@@ -18,7 +18,7 @@ router = APIRouter(prefix="/api", tags=["auth"])
 def login(payload: LoginRequest, db: Session = Depends(get_db)) -> ApiResponse:
     user = db.query(User).filter(User.username == payload.username).first()
     if not user or not verify_password(payload.password, user.password_hash):
-        return ApiResponse(code=1, message="用户名或密码错误", data=None)
+        raise HTTPException(status_code=401, detail="用户名或密码错误")
 
     token = create_access_token(data={"sub": user.id})
 

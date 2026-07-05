@@ -11,6 +11,7 @@ from app.core.security import get_current_user, get_db
 from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
+from app.services.document_parser import parse_document
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
 
@@ -183,12 +184,22 @@ async def upload_knowledge_base_document(
     doc = Document(
         knowledge_base_id=knowledge_base_id,
         filename=file.filename,
-        status="pending",
+        status="parsing",
         file_path=f"/uploads/{knowledge_base_id}/{safe_name}",
     )
     db.add(doc)
     db.commit()
     db.refresh(doc)
+
+    ext = (file.filename or "").rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
+    try:
+        text = parse_document(file_path, ext)
+        doc.content = text
+        doc.status = "completed"
+    except Exception as e:
+        doc.content = str(e)
+        doc.status = "failed"
+    db.commit()
 
     return ApiResponse(
         code=0,
@@ -196,10 +207,50 @@ async def upload_knowledge_base_document(
         data={
             "id": doc.id,
             "name": file.filename,
-            "status": "待处理",
+            "status": _status_label(doc.status),
             "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "file_size": len(content),
             "file_path": doc.file_path,
+        },
+    )
+
+
+@router.get(
+    "/knowledge-bases/{knowledge_base_id}/documents/{document_id}/content",
+    response_model=ApiResponse,
+)
+def get_document_content(
+    knowledge_base_id: int,
+    document_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    doc = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id,
+            Document.knowledge_base_id == knowledge_base_id,
+        )
+        .first()
+    )
+    if not doc:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    content_preview = (doc.content or "")[:5000]
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "id": doc.id,
+            "name": doc.filename,
+            "status": _status_label(doc.status),
+            "content": content_preview,
+            "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         },
     )
 
