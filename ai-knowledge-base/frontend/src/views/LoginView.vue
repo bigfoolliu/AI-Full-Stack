@@ -50,7 +50,7 @@ const handleLogin = async () => {
         <p class="login-card__eyebrow">Welcome Back</p>
         <h1>登录 AI 知识库</h1>
         <p class="login-card__description">
-          输入后端 mock 账号密码，完成第一次真实前后端联调。
+          输入账号密码登录知识库系统。
         </p>
       </div>
 
@@ -73,7 +73,7 @@ const handleLogin = async () => {
       <el-alert v-if="userStore.loginError" :title="userStore.loginError" type="error" show-icon :closable="false" />
 
       <p class="login-card__hint">
-        当前 mock 账号：`admin`，密码：`123456`
+        Demo 账号：`admin`，密码：`123456`
       </p>
     </div>
   </section>

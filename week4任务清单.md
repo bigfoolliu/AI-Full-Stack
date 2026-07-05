@@ -191,14 +191,14 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 实现 `get_db` 依赖（yield SessionLocal）
-- [ ] 重写 `GET /api/knowledge-bases`：`db.query(KnowledgeBase)`，支持 keyword 模糊匹配 + page/page_size
-- [ ] 重写 `POST /api/knowledge-bases`：创建 KnowledgeBase 记录写入 DB
-- [ ] 重写 `GET /api/knowledge-bases/{id}`：按 id 查 DB，不存在返回 404
-- [ ] 重写 `GET /api/knowledge-bases/{id}/documents`：`db.query(Document).filter(kb_id=...)`，支持 status 筛选
-- [ ] 重写 `POST /api/knowledge-bases/{id}/documents`：保存 UploadFile 到磁盘 + 创建 Document 记录写入 DB
-- [ ] 删除 `MOCK_KNOWLEDGE_BASES` 和 `MOCK_DOCUMENTS`
-- [ ] 用 curl 验证所有接口返回正确
+- [x] 实现 `get_db` 依赖（yield SessionLocal）
+- [x] 重写 `GET /api/knowledge-bases`：`db.query(KnowledgeBase)`，支持 keyword 模糊匹配 + page/page_size
+- [x] 重写 `POST /api/knowledge-bases`：创建 KnowledgeBase 记录写入 DB
+- [x] 重写 `GET /api/knowledge-bases/{id}`：按 id 查 DB，不存在返回 404
+- [x] 重写 `GET /api/knowledge-bases/{id}/documents`：`db.query(Document).filter(kb_id=...)`，支持 status 筛选
+- [x] 重写 `POST /api/knowledge-bases/{id}/documents`：保存 UploadFile 到磁盘 + 创建 Document 记录写入 DB
+- [x] 删除 `MOCK_KNOWLEDGE_BASES` 和 `MOCK_DOCUMENTS`
+- [x] 用 curl 验证所有接口返回正确
 
 #### 今日重点
 
@@ -208,10 +208,10 @@ frontend/src/
 
 #### 验收标准
 
-- [ ] `GET /api/knowledge-bases` 返回从 DB 查询的数据
-- [ ] `POST /api/knowledge-bases` 创建的数据写入 DB
-- [ ] 分页、搜索、筛选功能与 DB 联动正常
-- [ ] 不存在的 id 返回 404
+- [x] `GET /api/knowledge-bases` 返回从 DB 查询的数据
+- [x] `POST /api/knowledge-bases` 创建的数据写入 DB
+- [x] 分页、搜索、筛选功能与 DB 联动正常
+- [x] 不存在的 id 返回 404
 
 ---
 

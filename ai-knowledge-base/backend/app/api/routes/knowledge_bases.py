@@ -1,7 +1,7 @@
 import os
 import time
 
-from fastapi import APIRouter, Depends, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from sqlalchemy import func
@@ -101,7 +101,7 @@ def get_knowledge_base_detail(
 ) -> ApiResponse:
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
-        return ApiResponse(code=1, message="知识库不存在", data=None)
+        raise HTTPException(status_code=404, detail="知识库不存在")
 
     doc_count = (
         db.query(Document)
@@ -133,7 +133,7 @@ def get_knowledge_base_documents(
 ) -> ApiResponse:
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
-        return ApiResponse(code=1, message="知识库不存在", data=None)
+        raise HTTPException(status_code=404, detail="知识库不存在")
 
     query = db.query(Document).filter(Document.knowledge_base_id == knowledge_base_id)
     if status:
@@ -167,7 +167,7 @@ async def upload_knowledge_base_document(
 ) -> ApiResponse:
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
-        return ApiResponse(code=1, message="知识库不存在", data=None)
+        raise HTTPException(status_code=404, detail="知识库不存在")
 
     upload_dir = os.path.join(UPLOAD_DIR, str(knowledge_base_id))
     os.makedirs(upload_dir, exist_ok=True)
