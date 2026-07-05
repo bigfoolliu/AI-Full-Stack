@@ -1,20 +1,20 @@
 <script setup lang="ts">
 const summaryCards = [
-  { label: '知识库总数', value: '3', note: '当前已创建并可管理的知识库' },
-  { label: '文档总数', value: '44', note: '已进入知识库的文档资源数量' },
-  { label: '处理中任务', value: '2', note: '等待解析或待更新的任务' },
+  { title: '知识库总数', value: 3 },
+  { title: '文档总数', value: 44 },
+  { title: '处理中任务', value: 2 },
 ]
 
 const recentKnowledgeBases = [
-  { name: '产品帮助中心', time: '今天 10:30 更新', status: '内容已同步' },
-  { name: '面试题知识库', time: '今天 09:12 更新', status: '文档解析中' },
-  { name: '项目规范文档', time: '昨天 18:45 更新', status: '等待补充材料' },
+  { name: '产品帮助中心', time: '今天 10:30 更新', status: '内容已同步', statusType: 'success' },
+  { name: '面试题知识库', time: '今天 09:12 更新', status: '文档解析中', statusType: 'warning' },
+  { name: '项目规范文档', time: '昨天 18:45 更新', status: '等待补充材料', statusType: 'info' },
 ]
 
 const todayTasks = [
   '检查"面试题知识库"的解析状态',
   '补充项目规范文档的最新版本',
-  '准备 Day 3 的登录态和路由守卫改造',
+  '准备登录态和路由守卫改造',
 ]
 </script>
 
@@ -25,18 +25,14 @@ const todayTasks = [
         <p class="dashboard-hero__eyebrow">Workspace Overview</p>
         <h2>欢迎回来，今天继续把 AI 知识库项目往前推进。</h2>
         <p class="dashboard-hero__description">
-          这是 Day 2 的工作台占位页版本，先把后台首页的信息结构搭稳，后面再逐步接入真实数据。
+          查看知识库概览和待处理任务。
         </p>
       </div>
     </header>
 
     <div class="dashboard-summary">
-      <el-card v-for="item in summaryCards" :key="item.label" shadow="hover">
-        <div class="dashboard-card">
-          <p class="dashboard-card__label">{{ item.label }}</p>
-          <strong>{{ item.value }}</strong>
-          <span>{{ item.note }}</span>
-        </div>
+      <el-card v-for="item in summaryCards" :key="item.title" shadow="hover">
+        <el-statistic :value="item.value" :title="item.title" />
       </el-card>
     </div>
 
@@ -45,24 +41,22 @@ const todayTasks = [
         <template #header>
           <span>最近更新的知识库</span>
         </template>
-        <ul class="dashboard-list">
-          <li v-for="item in recentKnowledgeBases" :key="item.name" class="dashboard-list__item">
-            <div>
-              <strong>{{ item.name }}</strong>
-              <p>{{ item.time }}</p>
-            </div>
-            <el-tag size="small">{{ item.status }}</el-tag>
-          </li>
-        </ul>
+        <div v-for="item in recentKnowledgeBases" :key="item.name" class="dashboard-list-item">
+          <div>
+            <strong>{{ item.name }}</strong>
+            <p>{{ item.time }}</p>
+          </div>
+          <el-tag :type="item.statusType as any" size="small">{{ item.status }}</el-tag>
+        </div>
       </el-card>
 
       <el-card shadow="never">
         <template #header>
           <span>今日待处理</span>
         </template>
-        <ul class="dashboard-todo">
-          <li v-for="task in todayTasks" :key="task">{{ task }}</li>
-        </ul>
+        <div v-for="task in todayTasks" :key="task" class="dashboard-todo-item">
+          {{ task }}
+        </div>
       </el-card>
     </div>
   </section>

@@ -1,26 +1,43 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
 import { useUserStore } from '../stores/user'
 
 const router = useRouter()
 const userStore = useUserStore()
-const username = ref('')
-const password = ref('')
+
+const formRef = ref<FormInstance>()
+
+const form = reactive({
+  username: '',
+  password: '',
+})
+
+const rules: FormRules = {
+  username: [
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 2, max: 50, message: '用户名长度为 2-50 个字符', trigger: 'blur' },
+  ],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 4, max: 50, message: '密码长度为 4-50 个字符', trigger: 'blur' },
+  ],
+}
 
 const handleLogin = async () => {
-  const trimmedUsername = username.value.trim()
-  const trimmedPassword = password.value.trim()
+  if (!formRef.value) return
+
+  const valid = await formRef.value.validate().catch(() => false)
+  if (!valid) return
 
   userStore.clearError()
 
-  if (!trimmedUsername || !trimmedPassword) {
-    return
-  }
-
-  const success = await userStore.login(trimmedUsername, trimmedPassword)
+  const success = await userStore.login(form.username.trim(), form.password.trim())
 
   if (success) {
+    ElMessage.success('登录成功')
     router.push('/dashboard')
   }
 }
@@ -37,23 +54,23 @@ const handleLogin = async () => {
         </p>
       </div>
 
-      <form class="login-form" @submit.prevent="handleLogin">
-        <label class="login-field">
-          <span>用户名</span>
-          <input id="username" v-model="username" type="text" placeholder="请输入用户名" autocomplete="username" />
-        </label>
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="handleLogin">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="form.username" placeholder="请输入用户名" autocomplete="username" />
+        </el-form-item>
 
-        <label class="login-field">
-          <span>密码</span>
-          <input id="password" v-model="password" type="password" placeholder="请输入密码" autocomplete="current-password" />
-        </label>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" placeholder="请输入密码" autocomplete="current-password" show-password />
+        </el-form-item>
 
-        <button type="submit" class="login-submit" :disabled="userStore.loginLoading">
-          {{ userStore.loginLoading ? '登录中...' : '登录' }}
-        </button>
-      </form>
+        <el-form-item>
+          <el-button type="primary" native-type="submit" :loading="userStore.loginLoading" style="width: 100%">
+            {{ userStore.loginLoading ? '登录中...' : '登录' }}
+          </el-button>
+        </el-form-item>
+      </el-form>
 
-      <p v-if="userStore.loginError" class="login-card__error">{{ userStore.loginError }}</p>
+      <el-alert v-if="userStore.loginError" :title="userStore.loginError" type="error" show-icon :closable="false" />
 
       <p class="login-card__hint">
         当前 mock 账号：`admin`，密码：`123456`
