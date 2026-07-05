@@ -166,6 +166,8 @@ async def upload_knowledge_base_document(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """上传文档的时候开始解析文档"""
+
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -191,7 +193,9 @@ async def upload_knowledge_base_document(
     db.commit()
     db.refresh(doc)
 
-    ext = (file.filename or "").rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
+    ext = (
+        (file.filename or "").rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
+    )
     try:
         text = parse_document(file_path, ext)
         doc.content = text

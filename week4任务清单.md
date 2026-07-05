@@ -264,25 +264,25 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 创建 `src/stores/auth.ts`（Pinia store）
+- [x] 创建 `src/stores/auth.ts`（Pinia store）
   - state: `token`（localStorage 持久化）、`user`（UserInfo | null）
   - getter: `isLoggedIn`
   - action: `login(username, password)` → 调用 `POST /api/login` → 存储 token + user
   - action: `logout()` → 清除 token + user → router.push('/login')
   - action: `initAuth()` → 从 localStorage 恢复 token → 调用 `/api/me` 验证有效性
-- [ ] 更新 `src/api/request.ts`（axios 拦截器）
+- [x] 更新 `src/api/request.ts`（axios 拦截器）
   - 请求拦截器：从 authStore 读取 token，加到 `Authorization: Bearer xxx`
   - 响应拦截器：401 时调用 `authStore.logout()` 并跳转登录页
-- [ ] 更新 `LoginView.vue`
+- [x] 更新 `LoginView.vue`
   - 调用 `authStore.login()` 替代直接调 API
   - 登录成功后 `router.push('/dashboard')`
   - 错误时展示 ElAlert
-- [ ] 更新 `router/index.ts`
+- [x] 更新 `router/index.ts`
   - 全局前置守卫：检查 `authStore.isLoggedIn`
   - 未登录且不在 `/login` → 重定向到 `/login`
   - 已登录时访问 `/login` → 重定向到 `/dashboard`
-- [ ] 在 `App.vue` 或 `ShellTopbar.vue` 中添加退出按钮（调用 `authStore.logout()`）
-- [ ] 在入口 `main.ts` 中初始化 authStore：`app.use(createPinia())` + 调用 `authStore.initAuth()`
+- [x] 在 `App.vue` 或 `ShellTopbar.vue` 中添加退出按钮（调用 `authStore.logout()`）
+- [x] 在入口 `main.ts` 中初始化 authStore：`app.use(createPinia())` + 调用 `authStore.initAuth()`
 
 #### 今日重点
 
@@ -306,20 +306,20 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 创建 `app/services/__init__.py`
-- [ ] 创建 `app/services/document_parser.py`
+- [x] 创建 `app/services/__init__.py`
+- [x] 创建 `app/services/document_parser.py`
   - `parse_document(file_path: str, file_type: str) -> str`
   - PDF 解析：`fitz.open()` → 逐页提取 text
   - TXT 解析：`open().read()` 按 UTF-8 读取
   - 异常处理：解析失败抛出异常，由调用方处理
-- [ ] 更新 `POST /api/knowledge-bases/{id}/documents`
+- [x] 更新 `POST /api/knowledge-bases/{id}/documents`
   - 上传保存文件后，调用 `parse_document`
   - 更新 Document.status：`pending` → `parsing` → `completed`
   - 解析出的文本写入 Document.content 字段
   - 解析失败时 status → `failed`，content 记录错误信息
-- [ ] 创建 `GET /api/knowledge-bases/{id}/documents/{doc_id}/content`
+- [x] 创建 `GET /api/knowledge-bases/{id}/documents/{doc_id}/content`
   - 返回文档 ID、文件名、状态、文本内容（前 5000 字符）等
-- [ ] 用 curl 验证上传 PDF/TXT 后的解析效果
+- [x] 用 curl 验证上传 PDF/TXT 后的解析效果
 
 #### 今日重点
 
@@ -329,11 +329,11 @@ frontend/src/
 
 #### 验收标准
 
-- [ ] 上传 PDF 后能提取出文本内容，存入 Document.content
-- [ ] 上传 TXT 后能提取出文本内容
-- [ ] 文档 status 正确流转：pending → parsing → completed
-- [ ] 解析失败的文档 status → failed
-- [ ] 通过 `/content` 接口可查看解析结果
+- [x] 上传 PDF 后能提取出文本内容，存入 Document.content
+- [x] 上传 TXT 后能提取出文本内容
+- [x] 文档 status 正确流转：pending → parsing → completed
+- [x] 解析失败的文档 status → failed
+- [x] 通过 `/content` 接口可查看解析结果
 
 ---
 
