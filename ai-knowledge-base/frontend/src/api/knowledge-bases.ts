@@ -19,6 +19,13 @@ export interface KnowledgeBaseItem {
   created_at: string;
 }
 
+export interface PaginatedData<T> {
+  items: T[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
 export interface KnowledgeBaseDocumentItem {
   id: number;
   name: string;
@@ -26,9 +33,13 @@ export interface KnowledgeBaseDocumentItem {
   updated_at: string;
 }
 
-export const getKnowledgeBases = async () => {
-  const response = await http.get<ApiResponse<KnowledgeBaseItem[]>>(
-    "/api/knowledge-bases"
+export const getKnowledgeBases = async (
+  page = 1,
+  pageSize = 10
+) => {
+  const response = await http.get<ApiResponse<PaginatedData<KnowledgeBaseItem>>>(
+    "/api/knowledge-bases",
+    { params: { page, page_size: pageSize } }
   );
   return response.data;
 };

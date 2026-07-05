@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
@@ -73,13 +73,7 @@ onMounted(() => {
       <el-button type="primary" @click="goToUpload">去上传文档</el-button>
     </div>
 
-    <el-table
-      v-loading="loading"
-      :data="documents"
-      style="width: 100%"
-      empty-text="当前还没有文档，快去上传一个吧"
-      stripe
-    >
+    <el-table v-loading="loading" :data="documents" style="width: 100%" empty-text="当前还没有文档，快去上传一个吧" stripe>
       <el-table-column prop="name" label="文档名称" min-width="200" />
       <el-table-column label="状态" width="120">
         <template #default="{ row }">

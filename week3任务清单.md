@@ -114,9 +114,9 @@ frontend/src/
 
 ### 验收标准
 
-- [ ] 知识库列表渲染正常，样式是 Element Plus 风格
-- [ ] 创建知识库成功/失败后有 ElMessage 弹窗
-- [ ] 文档列表状态显示 ElTag
+- [x] 知识库列表渲染正常，样式是 Element Plus 风格
+- [x] 创建知识库成功/失败后有 ElMessage 弹窗
+- [x] 文档列表状态显示 ElTag
 
 ---
 

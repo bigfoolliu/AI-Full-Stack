@@ -1,13 +1,39 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import type { FormInstance, FormRules } from "element-plus";
 import { createKnowledgeBase } from "../api/knowledge-bases";
 
 const router = useRouter();
 
-const name = ref("");
-const description = ref("");
+const formRef = ref<FormInstance>();
+
+const form = reactive({
+  name: "",
+  description: "",
+});
+
+const rules: FormRules = {
+  name: [
+    { required: true, message: "知识库名称不能为空", trigger: "blur" },
+    { min: 1, max: 50, message: "名称长度为 1-50 个字符", trigger: "blur" },
+    {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
+        if (value && !value.trim()) {
+          callback(new Error("名称不能只包含空格"));
+        } else {
+          callback();
+        }
+      },
+      trigger: "blur",
+    },
+  ],
+  description: [
+    { max: 200, message: "描述不超过 200 个字符", trigger: "blur" },
+  ],
+};
+
 const loading = ref(false);
 
 const goBack = () => {
@@ -15,17 +41,17 @@ const goBack = () => {
 };
 
 const handleSubmit = async () => {
-  if (!name.value.trim()) {
-    ElMessage.warning("知识库名称不能为空");
-    return;
-  }
+  if (!formRef.value) return;
+
+  const valid = await formRef.value.validate().catch(() => false);
+  if (!valid) return;
 
   loading.value = true;
 
   try {
     const result = await createKnowledgeBase({
-      name: name.value.trim(),
-      description: description.value.trim(),
+      name: form.name.trim(),
+      description: form.description.trim(),
     });
 
     if (result.code !== 0 || !result.data) {
@@ -51,13 +77,13 @@ const handleSubmit = async () => {
     </header>
 
     <el-card class="kb-form-card">
-      <el-form label-width="100" label-position="top">
-        <el-form-item label="知识库名称" required>
-          <el-input v-model="name" placeholder="例如：产品知识库" maxlength="50" />
+      <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
+        <el-form-item label="知识库名称" prop="name">
+          <el-input v-model="form.name" placeholder="例如：产品知识库" maxlength="50" />
         </el-form-item>
-        <el-form-item label="知识库描述">
+        <el-form-item label="知识库描述" prop="description">
           <el-input
-            v-model="description"
+            v-model="form.description"
             type="textarea"
             :rows="5"
             placeholder="简单描述这个知识库的用途、资料范围或目标用户"

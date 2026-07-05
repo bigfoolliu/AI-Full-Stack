@@ -10,12 +10,15 @@ import {
 const router = useRouter();
 const knowledgeBases = ref<KnowledgeBaseItem[]>([]);
 const loading = ref(true);
+const currentPage = ref(1);
+const pageSize = ref(10);
+const total = ref(0);
 
 const fetchKnowledgeBases = async () => {
   loading.value = true;
 
   try {
-    const result = await getKnowledgeBases();
+    const result = await getKnowledgeBases(currentPage.value, pageSize.value);
 
     if (result.code !== 0 || !result.data) {
       ElMessage.error(result.message || "获取知识库列表失败");
@@ -23,7 +26,8 @@ const fetchKnowledgeBases = async () => {
       return;
     }
 
-    knowledgeBases.value = result.data;
+    knowledgeBases.value = result.data.items;
+    total.value = result.data.total;
   } catch {
     ElMessage.error("请求知识库列表失败，请稍后重试");
     knowledgeBases.value = [];
@@ -46,6 +50,11 @@ const goToDocuments = (id: number) => {
 
 const goToUpload = (id: number) => {
   router.push(`/knowledge-bases/${id}/upload`);
+};
+
+const onPageChange = (page: number) => {
+  currentPage.value = page;
+  void fetchKnowledgeBases();
 };
 </script>
 
@@ -94,5 +103,17 @@ const goToUpload = (id: number) => {
         </template>
       </el-table-column>
     </el-table>
+
+    <div style="display: flex; justify-content: center; margin-top: 16px;">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[5, 10, 20]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="onPageChange"
+        @size-change="onPageChange"
+      />
+    </div>
   </section>
 </template>
