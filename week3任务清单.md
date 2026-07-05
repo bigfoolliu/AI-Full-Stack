@@ -128,11 +128,11 @@ frontend/src/
 
 ### 任务清单
 
-- [ ] 用 `ElForm` + `ElFormItem` + `ElInput` 替换 `KnowledgeBaseCreateView.vue` 手写表单
-- [ ] 用 `ElForm` 内置验证规则替换手写验证
-- [ ] 为知识库列表页增加 `ElPagination` 分页组件
-- [ ] 后端 `GET /api/knowledge-bases` 支持 `page`、`page_size` 参数
-- [ ] 前端分页逻辑与后端参数联动
+- [x] 用 `ElForm` + `ElFormItem` + `ElInput` 替换 `KnowledgeBaseCreateView.vue` 手写表单
+- [x] 用 `ElForm` 内置验证规则替换手写验证
+- [x] 为知识库列表页增加 `ElPagination` 分页组件
+- [x] 后端 `GET /api/knowledge-bases` 支持 `page`、`page_size` 参数
+- [x] 前端分页逻辑与后端参数联动
 
 ### 今日重点
 
@@ -140,8 +140,8 @@ frontend/src/
 
 ### 验收标准
 
-- [ ] 新建知识库表单使用 Element Plus，验证规则正常
-- [ ] 知识库列表底部分页组件可用，翻页后数据变化
+- [x] 新建知识库表单使用 Element Plus，验证规则正常
+- [x] 知识库列表底部分页组件可用，翻页后数据变化
 
 ---
 
@@ -153,12 +153,12 @@ frontend/src/
 
 ### 任务清单
 
-- [ ] 用 `ElUpload` 替换 `KnowledgeBaseUploadView.vue` 的手写文件选择区域
-- [ ] 配置 `ElUpload` action 指向后端上传端点
-- [ ] 后端 `POST /api/knowledge-bases/{id}/documents` 改为接收 `UploadFile`
-- [ ] 后端将上传文件保存到本地 `uploads/` 目录
-- [ ] 上传成功后返回文档记录，前端显示上传结果
-- [ ] 上传页增加进度提示和上传成功/失败状态
+- [x] 用 `ElUpload` 替换 `KnowledgeBaseUploadView.vue` 的手写文件选择区域
+- [x] 配置 `ElUpload` action 指向后端上传端点
+- [x] 后端 `POST /api/knowledge-bases/{id}/documents` 改为接收 `UploadFile`
+- [x] 后端将上传文件保存到本地 `uploads/` 目录
+- [x] 上传成功后返回文档记录，前端显示上传结果
+- [x] 上传页增加进度提示和上传成功/失败状态
 
 ### 今日重点
 
@@ -166,9 +166,9 @@ frontend/src/
 
 ### 验收标准
 
-- [ ] 上传页使用 Element Plus Upload 组件
-- [ ] 选择文件后可点击上传，后端保存文件到磁盘
-- [ ] 上传成功后有明确反馈
+- [x] 上传页使用 Element Plus Upload 组件
+- [x] 选择文件后可点击上传，后端保存文件到磁盘
+- [x] 上传成功后有明确反馈
 
 ---
 

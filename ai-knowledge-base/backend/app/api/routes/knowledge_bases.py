@@ -1,5 +1,9 @@
-from fastapi import APIRouter, Query
+import os
+import time
 
+from fastapi import APIRouter, File, Query, UploadFile
+
+from app.core.config import UPLOAD_DIR
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
 
@@ -111,21 +115,35 @@ def get_knowledge_base_documents(knowledge_base_id: int) -> ApiResponse:
 
 
 @router.post("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
-def upload_knowledge_base_document(
+async def upload_knowledge_base_document(
     knowledge_base_id: int,
-    payload: dict,
+    file: UploadFile = File(...),
 ) -> ApiResponse:
     for item in MOCK_KNOWLEDGE_BASES:
         if item.id == knowledge_base_id:
+            upload_dir = os.path.join(UPLOAD_DIR, str(knowledge_base_id))
+            os.makedirs(upload_dir, exist_ok=True)
+
+            ts = int(time.time() * 1000)
+            safe_name = f"{ts}_{file.filename}"
+            file_path = os.path.join(upload_dir, safe_name)
+
+            content = await file.read()
+            with open(file_path, "wb") as f:
+                f.write(content)
+
             current_documents = MOCK_DOCUMENTS.setdefault(knowledge_base_id, [])
             next_id = max((doc["id"] for doc in current_documents), default=0) + 1
             created_document = {
                 "id": next_id,
-                "name": payload.get("name", f"document-{next_id}.txt"),
-                "status": "待处理",
-                "updated_at": "2026-07-01 15:00:00",
+                "name": file.filename,
+                "status": "已完成",
+                "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
+                "file_size": len(content),
+                "file_path": f"/uploads/{knowledge_base_id}/{safe_name}",
             }
             current_documents.append(created_document)
+
             return ApiResponse(code=0, message="ok", data=created_document)
 
     return ApiResponse(code=1, message="知识库不存在", data=None)

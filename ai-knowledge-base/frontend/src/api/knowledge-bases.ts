@@ -60,3 +60,11 @@ export const getKnowledgeBaseDocuments = async (id: string | number) => {
   );
   return response.data;
 };
+
+export const getUploadUrl = (knowledgeBaseId: string | number) =>
+  `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
+
+export const getUploadHeaders = () => {
+  const token = localStorage.getItem("ai-kb-token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
