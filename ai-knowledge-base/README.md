@@ -1,37 +1,36 @@
 # AI Knowledge Base
 
-一个面向 AI 全栈转岗训练的最小知识库项目。当前阶段目标不是一次做全，而是按周推进，把前端、后端、联调和业务页一步步串成完整闭环。
+一个面向 AI 全栈转岗训练的最小知识库项目。按周推进，把前端、后端、联调和业务页一步步串成完整闭环。
 
 ## 项目简介
 
-这个项目用于练习一个典型 AI 应用后台的基础能力：
+- 第 1 周：搭建"能跑起来的后台项目骨架"
+- 第 2 周：从骨架推进到"知识库管理后台雏形"
+- 第 3 周：全面引入 Element Plus，升级为"具备产品感的系统"
 
-第 1 周重点是把"能跑起来的后台项目骨架"搭出来。
-第 2 周重点是从骨架推进到"知识库管理后台雏形"。
-
-到第 2 周结束时，项目已具备：
-- 登录页与后台壳子
-- 前后端完整联调
-- 知识库列表 / 创建 / 文档管理 / 上传完整业务流
-- 后端知识库 CRUD 雏形与文档接口
+到第 3 周结束时，项目已具备：
+- 6 个页面全部使用 Element Plus 组件，风格统一
+- 知识库列表支持搜索、状态筛选、分页
+- 拖拽式文件上传 + 后端真实文件存储
+- 面包屑导航、loading/空状态/错误反馈完善
 
 ## 技术栈
 
 ### Frontend
 
-- Vue 3
-- TypeScript
+- Vue 3 + TypeScript
 - Vite
 - Vue Router
 - Pinia
 - Axios
-- Element Plus（已安装）
+- **Element Plus（全面落地）** — ElTable / ElForm / ElUpload / ElPagination / ElSelect / ElBreadcrumb / ElCard / ElTag / ElStatistic / ElMessage / ElAlert
 
 ### Backend
 
 - FastAPI
 - Pydantic
 - Uvicorn
+- python-multipart（文件上传）
 
 ## 当前已完成功能
 
@@ -51,6 +50,17 @@
 - 文档列表 / 状态页 `/knowledge-bases/:id/documents` — 真实接口渲染
 - 文档上传页 `/knowledge-bases/:id/upload` — 文件选择 + 上传入口
 
+### 前端（第 3 周新增）
+
+- **知识库列表页** — 全面 EP 化：`ElTable` + `ElPagination` 分页 + `ElInput` 搜索（300ms debounce）+ 搜索与分页联动
+- **新建知识库页** — `ElForm` 内置验证规则（必填/长度/纯空格检测），创建成功后跳转到文档列表页
+- **文档列表页** — `ElTable` + `ElTag` 状态标签 + `ElSelect` 状态筛选（全部/已完成/解析中/待处理）
+- **文档上传页** — `ElUpload` 拖拽上传 + 50MB 限制 + 真实后端 `UploadFile` 文件存储 + 上传成功自动跳转
+- **工作台页** — `ElCard` + `ElStatistic` 展示概览数据
+- **登录页** — `ElForm` + `ElInput` + `ElButton` + `ElAlert` 错误提示 + 表单验证
+- **面包屑导航** — `ElBreadcrumb` 动态显示页面路径
+- 所有页面统一 loading、空状态、错误提示
+
 ### 后端（第 1 周）
 
 - `GET /health`
@@ -69,13 +79,22 @@
 - `POST /api/knowledge-bases/{id}/documents` — 上传文档（name 字段占位）
 - 内存数据结构的 CRUD 雏形
 
+### 后端（第 3 周新增）
+
+- `GET /api/knowledge-bases` — 新增 `keyword`、`page`、`page_size` 参数（名称/描述过滤 + 分页）
+- `GET /api/knowledge-bases/{id}/documents` — 新增 `status` 筛选参数
+- `POST /api/knowledge-bases/{id}/documents` — 升级为 `UploadFile` 真实文件上传，保存到 `uploads/{kb_id}/`
+- 静态文件服务挂载 `/uploads`
+- `config.py` 新增 `UPLOAD_DIR` 配置
+
 ### 联调情况
 
 - 登录页已接入真实后端 `POST /api/login`
 - 页面初始化可调用 `GET /api/me`
-- 知识库列表已通过 `GET /api/knowledge-bases` 渲染真实数据
-- 新建知识库已调用 `POST /api/knowledge-bases` 并展示结果
-- 文档列表已调用 `GET /api/knowledge-bases/{id}/documents` 并渲染
+- 知识库列表已通过 `GET /api/knowledge-bases` 渲染真实数据（支持搜索 + 分页）
+- 新建知识库已调用 `POST /api/knowledge-bases` 并跳转到文档列表页
+- 文档列表已调用 `GET /api/knowledge-bases/{id}/documents` 并渲染（支持状态筛选）
+- 文件上传已调用 `POST /api/knowledge-bases/{id}/documents`（`UploadFile`）并保存到磁盘
 
 ## 项目目录结构
 
@@ -89,9 +108,13 @@ ai-knowledge-base/
 
 ### 说明
 
-- `frontend/src/`：前端页面、路由、store、API 封装
-- `backend/app/`：后端应用主入口、路由、schema、配置
-- `docs/superpowers/`：按天整理的设计和执行计划文档
+- `frontend/src/views/` — 6 个 Element Plus 业务页面
+- `frontend/src/api/` — 后端接口封装
+- `frontend/src/router/` — 路由 + 守卫
+- `frontend/src/stores/` — Pinia 状态管理
+- `backend/app/api/routes/` — FastAPI 路由
+- `backend/app/schemas/` — Pydantic 数据模型
+- `backend/app/core/` — 配置
 
 以下目录主要属于本地开发环境产物，不是项目核心成果本身：
 
@@ -100,77 +123,59 @@ ai-knowledge-base/
 - `backend/.venv/`
 - `.idea/`
 - `__pycache__/`
+- `uploads/`
 
 ## 本地启动方式
 
 ### 启动后端
 
-进入后端目录：
-
 ```bash
 cd backend
-```
-
-推荐启动方式：
-
-```bash
-.venv/bin/python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### 启动前端
 
-进入前端目录：
-
 ```bash
 cd frontend
+npm run dev
 ```
 
-启动开发服务器：
+后端默认运行在 `http://127.0.0.1:8000`，前端在 `http://localhost:5173`。
 
-```bash
-pnpm dev
-```
+## 第 3 周接口清单
 
-## 第 2 周接口清单
+第 1-2 周接口基础上，第 3 周扩展了以下参数：
 
-第 1 周基础接口之上，第 2 周新增了以下业务接口：
+1. `GET /api/knowledge-bases` — 新增 `keyword`（搜索）、`page`（分页页码）、`page_size`（每页条数）
+2. `GET /api/knowledge-bases/{id}/documents` — 新增 `status`（文档状态筛选）
+3. `POST /api/knowledge-bases/{id}/documents` — 升级为 `UploadFile` 文件上传，返回 `file_size`、`file_path`
 
-1. `POST /api/knowledge-bases` — 创建知识库
-2. `GET /api/knowledge-bases/{id}` — 知识库详情
-3. `GET /api/knowledge-bases/{id}/documents` — 文档列表
-4. `POST /api/knowledge-bases/{id}/documents` — 上传文档
+后端返回统一分页格式：`PaginatedData{items, total, page, page_size}`。
 
-第 1 周已完成的接口继续保持：
+## 第 3 周页面清单
 
-1. `GET /health`
-2. `POST /api/login`
-3. `GET /api/me`
-4. `GET /api/knowledge-bases` — 知识库列表
+第 1-2 周的 6 个页面全部完成 Element Plus 改造：
 
-## 第 2 周页面清单
-
-第 1 周的 3 个页面基础上，第 2 周新增了以下业务页面：
-
-1. 新建知识库页 `/knowledge-bases/create`
-2. 文档列表 / 状态页 `/knowledge-bases/:id/documents`
-3. 文档上传页 `/knowledge-bases/:id/upload`
-
-第 1 周已完成的页面继续保持：
-
-1. 登录页 `/login`
-2. 工作台页 `/dashboard`
-3. 知识库列表页 `/knowledge-bases`
+| 页面 | 路径 | 核心 EP 组件 |
+|------|------|-------------|
+| 登录页 | `/login` | ElForm / ElInput / ElButton / ElAlert |
+| 工作台 | `/dashboard` | ElCard / ElStatistic / ElTag |
+| 知识库列表 | `/knowledge-bases` | ElTable / ElPagination / ElInput + Search icon |
+| 新建知识库 | `/knowledge-bases/create` | ElForm / ElInput / ElButton |
+| 文档列表/状态 | `/knowledge-bases/:id/documents` | ElTable / ElTag / ElSelect |
+| 文档上传 | `/knowledge-bases/:id/upload` | ElUpload（drag）/ ElIcon / ElButton |
 
 ## 建议保留的截图
 
 建议至少保留这 6 张页面截图，方便后续做周复盘、项目展示或简历整理：
 
-1. 登录页
-2. 工作台页
-3. 知识库列表页
-4. 新建知识库页
-5. 文档列表 / 状态页
-6. 文档上传页
+1. 登录页（ElForm 风格）
+2. 工作台页（ElStatistic 概览卡片）
+3. 知识库列表页（ElTable + 搜索框 + 分页）
+4. 新建知识库页（ElForm 验证）
+5. 文档列表 / 状态页（ElTable + 状态筛选 ElSelect）
+6. 文档上传页（ElUpload 拖拽区域）
 
 ## 第 1 周完成内容总结
 
@@ -193,21 +198,46 @@ pnpm dev
 
 第 2 周的项目已经从"登录 + 后台模板"推进到"知识库管理后台雏形"。
 
-## 下周计划（Week 3）
+## 第 3 周完成内容总结
 
-Week 3 建议重点推进以下方向：
+- **Element Plus 全面落地**：6 个页面全部使用 EP 组件，统一风格
+- **搜索 + 分页**：知识库列表支持关键词搜索（300ms debounce）和后端分页联动
+- **状态筛选**：文档列表页支持按"已完成/解析中/待处理"筛选
+- **真实文件上传**：ElUpload 拖拽上传，后端基于 `UploadFile` 保存到 `uploads/{kb_id}/`
+- **交互打磨**：面包屑导航、ElAlert 错误提示、上传中禁用返回、创建后自动跳转文档列表页
+- **后端扩展**：分页返回格式 `PaginatedData`、keyword/status 参数、uplloads 静态文件服务
 
-1. 引入 Element Plus 组件（表格、表单、上传、消息提示），替换手写样式
-2. 为知识库列表页增加搜索 / 筛选 / 分页能力
-3. 文档上传接入真实后端文件上传接口
-4. 后端引入数据库（SQLite 起步），替换内存数据结构
-5. 增加文档解析 / 切片的基础后端逻辑
-6. 引入简单的向量化与检索概念
+第 3 周的项目已经从"知识库管理后台雏形"推进到"具备产品感的系统"。
+
+## 下周计划（Week 4）
+
+### 1. 后端数据库
+
+- 引入 SQLite + SQLAlchemy，替换 in-memory mock 数据
+- 用户、知识库、文档表模型定义
+- Alembic 迁移管理
+
+### 2. 文档解析流水线
+
+- PDF / TXT 文档内容解析
+- 文本分块（chunking）策略
+- 解析状态管理（待处理 → 解析中 → 已完成）
+
+### 3. 语义搜索
+
+- 引入文本 Embedding（如 sentence-transformers）
+- 基于向量相似度的检索替代关键词搜索
+- 搜索结果显示片段高亮
+
+### 4. 认证完善
+
+- JWT 续期 / 刷新机制
+- 权限细分（管理员 / 普通用户）
 
 ## 当前阶段定位
 
 当前版本适合作为：
 
-- 第 2 周阶段性里程碑
-- 后续 Week 3 引入数据库、Element Plus 组件、搜索分页的稳定基础版本
-- AI 全栈转岗过程中的练习项目雏形
+- 第 3 周阶段性里程碑
+- 后续 Week 4 引入数据库、文档解析、语义搜索的稳定基础版本
+- AI 全栈转岗过程中的练习项目
