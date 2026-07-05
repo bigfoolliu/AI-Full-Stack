@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
+import { Search } from "@element-plus/icons-vue";
 import {
   getKnowledgeBases,
   type KnowledgeBaseItem,
@@ -13,12 +14,19 @@ const loading = ref(true);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+const keyword = ref("");
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const fetchKnowledgeBases = async () => {
   loading.value = true;
 
   try {
-    const result = await getKnowledgeBases(currentPage.value, pageSize.value);
+    const result = await getKnowledgeBases(
+      currentPage.value,
+      pageSize.value,
+      keyword.value || undefined
+    );
 
     if (result.code !== 0 || !result.data) {
       ElMessage.error(result.message || "获取知识库列表失败");
@@ -34,6 +42,20 @@ const fetchKnowledgeBases = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const onSearchInput = () => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    currentPage.value = 1;
+    void fetchKnowledgeBases();
+  }, 300);
+};
+
+const onSearchClear = () => {
+  if (keyword.value !== "") return;
+  currentPage.value = 1;
+  void fetchKnowledgeBases();
 };
 
 onMounted(() => {
@@ -69,9 +91,13 @@ const onPageChange = (page: number) => {
 
     <div class="kb-toolbar">
       <el-input
+        v-model="keyword"
         class="kb-search"
-        placeholder="搜索知识库名称"
+        placeholder="搜索知识库名称或描述"
         clearable
+        :prefix-icon="Search"
+        @input="onSearchInput"
+        @clear="onSearchClear"
       />
       <el-button type="primary" @click="goToCreate">
         新建知识库

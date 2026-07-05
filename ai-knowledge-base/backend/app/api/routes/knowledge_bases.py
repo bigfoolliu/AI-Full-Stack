@@ -55,11 +55,20 @@ MOCK_DOCUMENTS = {
 def get_knowledge_bases(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
+    keyword: str | None = Query(default=None),
 ) -> ApiResponse:
-    total = len(MOCK_KNOWLEDGE_BASES)
+    filtered = MOCK_KNOWLEDGE_BASES
+    if keyword:
+        kw = keyword.lower()
+        filtered = [
+            item for item in MOCK_KNOWLEDGE_BASES
+            if kw in item.name.lower() or kw in (item.description or "").lower()
+        ]
+
+    total = len(filtered)
     start = (page - 1) * page_size
     end = start + page_size
-    items = MOCK_KNOWLEDGE_BASES[start:end]
+    items = filtered[start:end]
 
     return ApiResponse(
         code=0,
@@ -102,13 +111,19 @@ def get_knowledge_base_detail(knowledge_base_id: int) -> ApiResponse:
 
 
 @router.get("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
-def get_knowledge_base_documents(knowledge_base_id: int) -> ApiResponse:
+def get_knowledge_base_documents(
+    knowledge_base_id: int,
+    status: str | None = Query(default=None),
+) -> ApiResponse:
     for item in MOCK_KNOWLEDGE_BASES:
         if item.id == knowledge_base_id:
+            docs = MOCK_DOCUMENTS.get(knowledge_base_id, [])
+            if status:
+                docs = [d for d in docs if d["status"] == status]
             return ApiResponse(
                 code=0,
                 message="ok",
-                data=MOCK_DOCUMENTS.get(knowledge_base_id, []),
+                data=docs,
             )
 
     return ApiResponse(code=1, message="知识库不存在", data=None)

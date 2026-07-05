@@ -35,11 +35,14 @@ export interface KnowledgeBaseDocumentItem {
 
 export const getKnowledgeBases = async (
   page = 1,
-  pageSize = 10
+  pageSize = 10,
+  keyword?: string
 ) => {
+  const params: Record<string, number | string> = { page, page_size: pageSize };
+  if (keyword) params.keyword = keyword;
   const response = await http.get<ApiResponse<PaginatedData<KnowledgeBaseItem>>>(
     "/api/knowledge-bases",
-    { params: { page, page_size: pageSize } }
+    { params }
   );
   return response.data;
 };
@@ -54,9 +57,12 @@ export const createKnowledgeBase = async (
   return response.data;
 };
 
-export const getKnowledgeBaseDocuments = async (id: string | number) => {
+export const getKnowledgeBaseDocuments = async (id: string | number, status?: string) => {
+  const params: Record<string, string> = {};
+  if (status) params.status = status;
   const response = await http.get<ApiResponse<KnowledgeBaseDocumentItem[]>>(
-    `/api/knowledge-bases/${id}/documents`
+    `/api/knowledge-bases/${id}/documents`,
+    { params }
   );
   return response.data;
 };

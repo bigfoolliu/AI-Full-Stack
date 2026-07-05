@@ -14,6 +14,7 @@ const router = useRouter();
 const knowledgeBaseId = route.params.id;
 const documents = ref<KnowledgeBaseDocumentItem[]>([]);
 const loading = ref(true);
+const statusFilter = ref("");
 
 const goBack = () => {
   router.push("/knowledge-bases");
@@ -23,11 +24,14 @@ const goToUpload = () => {
   router.push(`/knowledge-bases/${knowledgeBaseId}/upload`);
 };
 
-const fetchDocuments = async () => {
+const fetchDocuments = async (status?: string) => {
   loading.value = true;
 
   try {
-    const result = await getKnowledgeBaseDocuments(String(knowledgeBaseId));
+    const result = await getKnowledgeBaseDocuments(
+      String(knowledgeBaseId),
+      status || undefined
+    );
 
     if (result.code !== 0 || !result.data) {
       documents.value = [];
@@ -42,6 +46,10 @@ const fetchDocuments = async () => {
   } finally {
     loading.value = false;
   }
+};
+
+const onStatusChange = (value: string) => {
+  void fetchDocuments(value);
 };
 
 const statusTagType = (status: string) => {
@@ -70,6 +78,18 @@ onMounted(() => {
 
     <div class="kb-doc-actions">
       <el-button @click="goBack">返回知识库列表</el-button>
+      <el-select
+        v-model="statusFilter"
+        placeholder="筛选状态"
+        clearable
+        style="width: 140px"
+        @change="onStatusChange"
+      >
+        <el-option label="全部" value="" />
+        <el-option label="已完成" value="已完成" />
+        <el-option label="解析中" value="解析中" />
+        <el-option label="待处理" value="待处理" />
+      </el-select>
       <el-button type="primary" @click="goToUpload">去上传文档</el-button>
     </div>
 

@@ -180,18 +180,18 @@ frontend/src/
 
 ### 任务清单
 
-- [ ] 前端搜索框绑定 `v-model`，输入后触发查询
-- [ ] 后端 `GET /api/knowledge-bases` 支持 `keyword` 查询参数（按名称/描述过滤）
-- [ ] 搜索时带上 loading 状态
-- [ ] 文档列表页增加状态筛选下拉（`ElSelect` + `ElOption`）
-- [ ] 后端 `GET /api/knowledge-bases/{id}/documents` 支持 `status` 筛选参数
-- [ ] 搜索和筛选与分页联动
+- [x] 前端搜索框绑定 `v-model`，输入后触发查询
+- [x] 后端 `GET /api/knowledge-bases` 支持 `keyword` 查询参数（按名称/描述过滤）
+- [x] 搜索时带上 loading 状态
+- [x] 文档列表页增加状态筛选下拉（`ElSelect` + `ElOption`）
+- [x] 后端 `GET /api/knowledge-bases/{id}/documents` 支持 `status` 筛选参数
+- [x] 搜索和筛选与分页联动
 
 ### 验收标准
 
-- [ ] 在搜索框输入后，知识库列表按关键词过滤
-- [ ] 选择文档状态筛选后，文档列表按状态过滤
-- [ ] 搜索/筛选和分页同时使用时逻辑正确
+- [x] 在搜索框输入后，知识库列表按关键词过滤
+- [x] 选择文档状态筛选后，文档列表按状态过滤
+- [x] 搜索/筛选和分页同时使用时逻辑正确
 
 ---
 
