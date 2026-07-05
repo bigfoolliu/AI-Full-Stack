@@ -60,7 +60,7 @@ const handleSubmit = async () => {
     }
 
     ElMessage.success(`知识库“${result.data.name}”创建成功`);
-    router.push("/knowledge-bases");
+    router.push(`/knowledge-bases/${result.data.id}/documents`);
   } catch {
     ElMessage.error("创建知识库请求失败，请稍后重试");
   } finally {

@@ -57,6 +57,13 @@ export const createKnowledgeBase = async (
   return response.data;
 };
 
+export const getKnowledgeBaseDetail = async (id: string | number) => {
+  const response = await http.get<ApiResponse<KnowledgeBaseItem>>(
+    `/api/knowledge-bases/${id}`
+  );
+  return response.data;
+};
+
 export const getKnowledgeBaseDocuments = async (id: string | number, status?: string) => {
   const params: Record<string, string> = {};
   if (status) params.status = status;

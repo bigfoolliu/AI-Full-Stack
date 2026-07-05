@@ -76,7 +76,7 @@ const onError = () => {
       </el-upload>
 
       <div class="kb-form-actions" style="margin-top: 20px">
-        <el-button @click="goBack">返回文档列表</el-button>
+        <el-button :disabled="loading" @click="goBack">返回文档列表</el-button>
       </div>
     </el-card>
   </section>

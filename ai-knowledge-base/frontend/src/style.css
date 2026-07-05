@@ -105,15 +105,8 @@ p {
   gap: 16px;
 }
 
-.shell-topbar__label {
-  margin-bottom: 6px;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: #64748b;
-}
-
 .shell-topbar h1 {
+  margin-top: 8px;
   font-size: 28px;
   line-height: 1.2;
 }

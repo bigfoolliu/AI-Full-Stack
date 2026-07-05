@@ -14,7 +14,7 @@ const recentKnowledgeBases = [
 const todayTasks = [
   '检查"面试题知识库"的解析状态',
   '补充项目规范文档的最新版本',
-  '准备登录态和路由守卫改造',
+  '添加搜索/筛选功能的知识库列表验证',
 ]
 </script>
 

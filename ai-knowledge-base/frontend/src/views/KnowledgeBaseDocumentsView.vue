@@ -4,6 +4,7 @@ import { useRouter } from "vue-router";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import {
+  getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
   type KnowledgeBaseDocumentItem,
 } from "../api/knowledge-bases";
@@ -12,6 +13,7 @@ const route = useRoute();
 const router = useRouter();
 
 const knowledgeBaseId = route.params.id;
+const kbName = ref("");
 const documents = ref<KnowledgeBaseDocumentItem[]>([]);
 const loading = ref(true);
 const statusFilter = ref("");
@@ -58,7 +60,11 @@ const statusTagType = (status: string) => {
   return "info";
 };
 
-onMounted(() => {
+onMounted(async () => {
+  const detail = await getKnowledgeBaseDetail(String(knowledgeBaseId));
+  if (detail.code === 0 && detail.data) {
+    kbName.value = detail.data.name;
+  }
   void fetchDocuments();
 });
 </script>
@@ -67,13 +73,14 @@ onMounted(() => {
   <section class="kb-doc-page">
     <header class="kb-doc-page__header">
       <div>
-        <h2>文档列表 / 状态页</h2>
+        <h2>{{ kbName || '文档列表' }}</h2>
         <p>查看当前知识库下的文档处理情况。</p>
       </div>
     </header>
 
     <div class="kb-doc-context">
-      <strong>当前知识库 ID：{{ route.params.id }}</strong>
+      <strong>{{ kbName ? `${kbName} — 文档列表` : '文档列表' }}</strong>
+      <el-tag size="small" type="info">ID: {{ route.params.id }}</el-tag>
     </div>
 
     <div class="kb-doc-actions">

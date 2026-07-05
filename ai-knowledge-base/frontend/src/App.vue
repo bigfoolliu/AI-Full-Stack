@@ -2,6 +2,10 @@
 import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from './stores/user'
+interface BreadcrumbItem {
+  label: string
+  to?: string
+}
 
 const router = useRouter()
 const route = useRoute()
@@ -12,6 +16,16 @@ const navItems = [
   { label: '知识库', to: '/knowledge-bases' },
 ]
 
+const breadcrumbItems = computed((): BreadcrumbItem[] => {
+  const path = route.path
+  if (path === '/dashboard') return [{ label: '工作台' }]
+  if (path === '/knowledge-bases') return [{ label: '知识库管理' }]
+  if (path === '/knowledge-bases/create') return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '新建知识库' }]
+  if (path.startsWith('/knowledge-bases/') && path.endsWith('/documents')) return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '文档列表' }]
+  if (path.startsWith('/knowledge-bases/') && path.endsWith('/upload')) return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '上传文档' }]
+  return [{ label: 'AI 知识库' }]
+})
+
 const pageTitleMap: Record<string, string> = {
   '/dashboard': '工作台',
   '/knowledge-bases': '知识库',
@@ -21,7 +35,6 @@ const currentTitle = computed(() => pageTitleMap[route.path] ?? 'AI 知识库')
 const displayUsername = computed(() => userStore.nickname || userStore.username || '未登录用户')
 const displayRole = computed(() => (userStore.isLoggedIn ? '后端返回的真实用户信息' : '点击登录'))
 
-// 登出后返回到登陆页
 const handleLogout = () => {
   userStore.logout()
   router.push('/login')
@@ -46,7 +59,15 @@ const handleLogout = () => {
     <div class="shell-workspace">
       <header class="shell-topbar">
         <div>
-          <p class="shell-topbar__label">控制台</p>
+          <el-breadcrumb>
+            <el-breadcrumb-item
+              v-for="item in breadcrumbItems"
+              :key="item.label"
+              :to="item.to"
+            >
+              {{ item.label }}
+            </el-breadcrumb-item>
+          </el-breadcrumb>
           <h1>{{ currentTitle }}</h1>
         </div>
         <div class="shell-user">
