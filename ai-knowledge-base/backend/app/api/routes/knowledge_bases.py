@@ -1,54 +1,18 @@
 import os
 import time
 
-from fastapi import APIRouter, File, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
+from sqlalchemy.orm import Session
+
+from sqlalchemy import func
 
 from app.core.config import UPLOAD_DIR
+from app.core.security import get_current_user, get_db
+from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
-
-
-MOCK_KNOWLEDGE_BASES = [
-    KnowledgeBaseItem(id=1, name="产品知识库", description="产品文档与FAQ", document_count=3, created_at="2026-06-28 20:00:00"),
-    KnowledgeBaseItem(id=2, name="面试题知识库", description="AI 全栈转岗相关面试题与答案", document_count=12, created_at="2026-06-29 11:30:00"),
-    KnowledgeBaseItem(id=3, name="项目规范知识库", description="开发规范、提交流程与项目约定", document_count=8, created_at="2026-06-30 09:15:00"),
-    KnowledgeBaseItem(id=4, name="前端技术文档", description="Vue3 / React / TypeScript 技术总结", document_count=5, created_at="2026-07-01 08:00:00"),
-    KnowledgeBaseItem(id=5, name="后端技术文档", description="FastAPI / Django / Spring Boot 笔记", document_count=7, created_at="2026-07-01 09:00:00"),
-    KnowledgeBaseItem(id=6, name="算法与数据结构", description="面试高频算法题与解析", document_count=15, created_at="2026-07-01 10:00:00"),
-    KnowledgeBaseItem(id=7, name="数据库知识库", description="MySQL / PostgreSQL / Redis 总结", document_count=6, created_at="2026-07-01 11:00:00"),
-    KnowledgeBaseItem(id=8, name="DevOps 知识库", description="Docker / CI/CD / 部署方案", document_count=4, created_at="2026-07-01 12:00:00"),
-    KnowledgeBaseItem(id=9, name="设计模式", description="常见设计模式与最佳实践", document_count=9, created_at="2026-07-02 08:00:00"),
-    KnowledgeBaseItem(id=10, name="网络协议", description="HTTP / TCP / WebSocket 知识点", document_count=5, created_at="2026-07-02 09:00:00"),
-    KnowledgeBaseItem(id=11, name="安全知识库", description="认证授权 / 加密 / OWASP", document_count=6, created_at="2026-07-02 10:00:00"),
-]
-
-MOCK_DOCUMENTS = {
-    1: [
-        {
-            "id": 1,
-            "name": "产品介绍.pdf",
-            "status": "已完成",
-            "updated_at": "2026-07-01 09:30:00",
-        },
-        {
-            "id": 2,
-            "name": "FAQ_v2.docx",
-            "status": "解析中",
-            "updated_at": "2026-07-01 10:05:00",
-        },
-    ],
-    2: [
-        {
-            "id": 1,
-            "name": "AI面试题合集.txt",
-            "status": "待处理",
-            "updated_at": "2026-07-01 11:15:00",
-        }
-    ],
-    3: [],
-}
 
 
 @router.get("/knowledge-bases", response_model=ApiResponse)
@@ -56,25 +20,48 @@ def get_knowledge_bases(
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     keyword: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
-    filtered = MOCK_KNOWLEDGE_BASES
-    if keyword:
-        kw = keyword.lower()
-        filtered = [
-            item for item in MOCK_KNOWLEDGE_BASES
-            if kw in item.name.lower() or kw in (item.description or "").lower()
-        ]
+    query = db.query(KnowledgeBase)
 
-    total = len(filtered)
-    start = (page - 1) * page_size
-    end = start + page_size
-    items = filtered[start:end]
+    if keyword:
+        kw = f"%{keyword}%"
+        query = query.filter(
+            KnowledgeBase.name.ilike(kw) | KnowledgeBase.description.ilike(kw)
+        )
+
+    total = query.count()
+    items = (
+        query.order_by(KnowledgeBase.id.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+        .all()
+    )
+
+    counts = (
+        db.query(Document.knowledge_base_id, func.count(Document.id))
+        .group_by(Document.knowledge_base_id)
+        .all()
+    )
+    doc_counts = {kb_id: count for kb_id, count in counts}
+
+    result = [
+        KnowledgeBaseItem(
+            id=kb.id,
+            name=kb.name,
+            description=kb.description,
+            document_count=doc_counts.get(kb.id, 0),
+            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        )
+        for kb in items
+    ]
 
     return ApiResponse(
         code=0,
         message="ok",
         data=PaginatedData(
-            items=[item.model_dump() for item in items],
+            items=[item.model_dump() for item in result],
             total=total,
             page=page,
             page_size=page_size,
@@ -83,82 +70,145 @@ def get_knowledge_bases(
 
 
 @router.post("/knowledge-bases", response_model=ApiResponse)
-def create_knowledge_base(payload: CreateKnowledgeBaseRequest) -> ApiResponse:
-    next_id = max((item.id for item in MOCK_KNOWLEDGE_BASES), default=0) + 1
-    created_item = KnowledgeBaseItem(
-        id=next_id,
-        name=payload.name,
-        description=payload.description,
-        document_count=0,
-        created_at="2026-07-01 14:00:00",
-    )
-    MOCK_KNOWLEDGE_BASES.append(created_item)
+def create_knowledge_base(
+    payload: CreateKnowledgeBaseRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = KnowledgeBase(name=payload.name, description=payload.description)
+    db.add(kb)
+    db.commit()
+    db.refresh(kb)
 
     return ApiResponse(
         code=0,
         message="ok",
-        data=created_item,
+        data=KnowledgeBaseItem(
+            id=kb.id,
+            name=kb.name,
+            description=kb.description,
+            document_count=0,
+            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        ),
     )
 
 
 @router.get("/knowledge-bases/{knowledge_base_id}", response_model=ApiResponse)
-def get_knowledge_base_detail(knowledge_base_id: int) -> ApiResponse:
-    for item in MOCK_KNOWLEDGE_BASES:
-        if item.id == knowledge_base_id:
-            return ApiResponse(code=0, message="ok", data=item)
+def get_knowledge_base_detail(
+    knowledge_base_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        return ApiResponse(code=1, message="知识库不存在", data=None)
 
-    return ApiResponse(code=1, message="知识库不存在", data=None)
+    doc_count = (
+        db.query(Document)
+        .filter(Document.knowledge_base_id == knowledge_base_id)
+        .count()
+    )
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data=KnowledgeBaseItem(
+            id=kb.id,
+            name=kb.name,
+            description=kb.description,
+            document_count=doc_count,
+            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        ),
+    )
 
 
-@router.get("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
+@router.get(
+    "/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse
+)
 def get_knowledge_base_documents(
     knowledge_base_id: int,
     status: str | None = Query(default=None),
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
-    for item in MOCK_KNOWLEDGE_BASES:
-        if item.id == knowledge_base_id:
-            docs = MOCK_DOCUMENTS.get(knowledge_base_id, [])
-            if status:
-                docs = [d for d in docs if d["status"] == status]
-            return ApiResponse(
-                code=0,
-                message="ok",
-                data=docs,
-            )
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        return ApiResponse(code=1, message="知识库不存在", data=None)
 
-    return ApiResponse(code=1, message="知识库不存在", data=None)
+    query = db.query(Document).filter(Document.knowledge_base_id == knowledge_base_id)
+    if status:
+        query = query.filter(Document.status == status)
+
+    docs = query.order_by(Document.id.desc()).all()
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data=[
+            {
+                "id": doc.id,
+                "name": doc.filename,
+                "status": _status_label(doc.status),
+                "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            for doc in docs
+        ],
+    )
 
 
-@router.post("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
+@router.post(
+    "/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse
+)
 async def upload_knowledge_base_document(
     knowledge_base_id: int,
     file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
-    for item in MOCK_KNOWLEDGE_BASES:
-        if item.id == knowledge_base_id:
-            upload_dir = os.path.join(UPLOAD_DIR, str(knowledge_base_id))
-            os.makedirs(upload_dir, exist_ok=True)
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        return ApiResponse(code=1, message="知识库不存在", data=None)
 
-            ts = int(time.time() * 1000)
-            safe_name = f"{ts}_{file.filename}"
-            file_path = os.path.join(upload_dir, safe_name)
+    upload_dir = os.path.join(UPLOAD_DIR, str(knowledge_base_id))
+    os.makedirs(upload_dir, exist_ok=True)
 
-            content = await file.read()
-            with open(file_path, "wb") as f:
-                f.write(content)
+    ts = int(time.time() * 1000)
+    safe_name = f"{ts}_{file.filename}"
+    file_path = os.path.join(upload_dir, safe_name)
 
-            current_documents = MOCK_DOCUMENTS.setdefault(knowledge_base_id, [])
-            next_id = max((doc["id"] for doc in current_documents), default=0) + 1
-            created_document = {
-                "id": next_id,
-                "name": file.filename,
-                "status": "已完成",
-                "updated_at": time.strftime("%Y-%m-%d %H:%M:%S"),
-                "file_size": len(content),
-                "file_path": f"/uploads/{knowledge_base_id}/{safe_name}",
-            }
-            current_documents.append(created_document)
+    content = await file.read()
+    with open(file_path, "wb") as f:
+        f.write(content)
 
-            return ApiResponse(code=0, message="ok", data=created_document)
+    doc = Document(
+        knowledge_base_id=knowledge_base_id,
+        filename=file.filename,
+        status="pending",
+        file_path=f"/uploads/{knowledge_base_id}/{safe_name}",
+    )
+    db.add(doc)
+    db.commit()
+    db.refresh(doc)
 
-    return ApiResponse(code=1, message="知识库不存在", data=None)
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "id": doc.id,
+            "name": file.filename,
+            "status": "待处理",
+            "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "file_size": len(content),
+            "file_path": doc.file_path,
+        },
+    )
+
+
+def _status_label(status: str) -> str:
+    labels = {
+        "pending": "待处理",
+        "parsing": "解析中",
+        "completed": "已完成",
+        "failed": "解析失败",
+    }
+    return labels.get(status, status)

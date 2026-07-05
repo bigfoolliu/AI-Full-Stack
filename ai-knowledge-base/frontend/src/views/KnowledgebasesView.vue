@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
@@ -90,27 +90,14 @@ const onPageChange = (page: number) => {
     </header>
 
     <div class="kb-toolbar">
-      <el-input
-        v-model="keyword"
-        class="kb-search"
-        placeholder="搜索知识库名称或描述"
-        clearable
-        :prefix-icon="Search"
-        @input="onSearchInput"
-        @clear="onSearchClear"
-      />
+      <el-input v-model="keyword" class="kb-search" placeholder="搜索知识库名称或描述" clearable :prefix-icon="Search"
+        @input="onSearchInput" @clear="onSearchClear" />
       <el-button type="primary" @click="goToCreate">
         新建知识库
       </el-button>
     </div>
 
-    <el-table
-      v-loading="loading"
-      :data="knowledgeBases"
-      style="width: 100%"
-      empty-text="还没有知识库，先创建一个吧"
-      stripe
-    >
+    <el-table v-loading="loading" :data="knowledgeBases" style="width: 100%" empty-text="还没有知识库，先创建一个吧" stripe>
       <el-table-column label="名称" min-width="180">
         <template #default="{ row }">
           <div class="kb-name-cell">
@@ -131,15 +118,9 @@ const onPageChange = (page: number) => {
     </el-table>
 
     <div style="display: flex; justify-content: center; margin-top: 16px;">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :total="total"
-        :page-sizes="[5, 10, 20]"
-        layout="total, sizes, prev, pager, next"
-        @current-change="onPageChange"
-        @size-change="onPageChange"
-      />
+      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total"
+        :page-sizes="[5, 10, 20]" layout="total, sizes, prev, pager, next" @current-change="onPageChange"
+        @size-change="onPageChange" />
     </div>
   </section>
 </template>
