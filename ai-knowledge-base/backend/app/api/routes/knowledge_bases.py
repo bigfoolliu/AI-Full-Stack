@@ -268,6 +268,7 @@ def get_document_content(
 def search_knowledge_base_documents(
     knowledge_base_id: int,
     q: str = Query(default="", min_length=1),
+    status: str | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=100),
     db: Session = Depends(get_db),
@@ -285,7 +286,12 @@ def search_knowledge_base_documents(
         )
 
     results = search_documents(
-        db, kb_id=knowledge_base_id, keyword=q, page=page, page_size=page_size
+        db,
+        kb_id=knowledge_base_id,
+        keyword=q,
+        status=status,
+        page=page,
+        page_size=page_size,
     )
 
     return ApiResponse(
@@ -297,7 +303,9 @@ def search_knowledge_base_documents(
                     "id": item.id,
                     "filename": item.filename,
                     "kb_id": item.kb_id,
+                    "status": _status_label(item.status),
                     "snippet": item.snippet,
+                    "updated_at": item.created_at,
                 }
                 for item in results.items
             ],

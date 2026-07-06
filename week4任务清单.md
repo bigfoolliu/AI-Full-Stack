@@ -382,24 +382,24 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 更新 `KnowledgeBaseDocumentsView.vue`
+- [x] 更新 `KnowledgeBaseDocumentsView.vue`
   - 在状态筛选 `ElSelect` 旁增加关键词搜索 `ElInput`（v-model、300ms debounce）
   - 调用 `GET /api/knowledge-bases/{id}/search?q=xxx`
   - 搜索结果以当前表格形式展示：文件名、状态、内容片段（从 snippet 截取）
   - 搜索与状态筛选联动（q + status 同时传）
-- [ ] 更新 `src/api/knowledge-bases.ts`
+- [x] 更新 `src/api/knowledge-bases.ts`
   - 新增 `searchKnowledgeBaseDocuments(id: number, params: {q?, status?, page?, pageSize?})`
 - [ ] 全局功能检查
   - [ ] 完整链路：登录 → 创建知识库 → 上传 PDF → 等待解析 → 搜索 → 看到结果
   - [ ] 用 curl 验证所有 9 个接口
-  - [ ] 确认 `.gitignore` 排除 `*.db` 和 `uploads/` 下实际文件
+  - [x] 确认 `.gitignore` 排除 `*.db` 和 `uploads/` 下实际文件
 - [ ] 更新 README（第 4 周完成内容：DB、JWT、解析、FTS5）
 - [ ] 记录下周计划（Week 5：Qdrant + Embedding + 语义检索 + RAG 问答）
 
 #### 验收标准
 
-- [ ] 前端文档列表页支持关键词搜索
-- [ ] 搜索与状态筛选可同时使用
+- [x] 前端文档列表页支持关键词搜索
+- [x] 搜索与状态筛选可同时使用
 - [ ] 完整链路：登录 → 创建知识库 → 上传 PDF → 解析完成 → 搜索到内容
 - [ ] README 已更新到第 4 周阶段
 

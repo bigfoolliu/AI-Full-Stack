@@ -50,6 +50,13 @@
 - 文档列表 / 状态页 `/knowledge-bases/:id/documents` — 真实接口渲染
 - 文档上传页 `/knowledge-bases/:id/upload` — 文件选择 + 上传入口
 
+### 前端（第 4 周新增）
+
+- **Pinia 认证 Store**：登录/登出/fetchMe + localStorage token 持久化 + initAuth 初始化恢复
+- **axios 拦截器**：请求自动注入 `Authorization: Bearer` header、401 响应自动跳转登录页
+- **路由守卫**：Vue Router 全局前置守卫检查 isLoggedIn，未登录重定向到 `/login`
+- **文档搜索**：文档列表页新增 `ElInput` 搜索框（300ms debounce） + snippet 高亮展示 + 搜索与状态筛选联动 + 搜索结果分页
+
 ### 前端（第 3 周新增）
 
 - **知识库列表页** — 全面 EP 化：`ElTable` + `ElPagination` 分页 + `ElInput` 搜索（300ms debounce）+ 搜索与分页联动
@@ -87,14 +94,24 @@
 - 静态文件服务挂载 `/uploads`
 - `config.py` 新增 `UPLOAD_DIR` 配置
 
+### 后端（第 4 周新增）
+
+- **数据库基础设施**：SQLite + SQLAlchemy 2.0 ORM，User / KnowledgeBase / Document 三表模型
+- **JWT 认证**：python-jose JWT 签发 + bcrypt 密码哈希 + OAuth2PasswordBearer + Depends 依赖注入保护所有路由
+- **文档解析流水线**：PyMuPDF（fitz）PDF 逐页提取 + TXT 编码回退读取，状态流转 pending → parsing → completed / failed
+- **FTS5 全文搜索**：SQLite FTS5 虚拟表 + MATCH 查询 + snippet 高亮 + JOIN documents 表获取状态/时间
+- **新增接口**：`GET /content` 文档内容查看、`GET /search` 关键词搜索（支持 status 筛选 + 分页）
+
 ### 联调情况
 
-- 登录页已接入真实后端 `POST /api/login`
-- 页面初始化可调用 `GET /api/me`
+- 登录页已接入真实后端 `POST /api/login`（JWT 认证）
+- 页面初始化可调用 `GET /api/me`（Token 鉴权）
 - 知识库列表已通过 `GET /api/knowledge-bases` 渲染真实数据（支持搜索 + 分页）
 - 新建知识库已调用 `POST /api/knowledge-bases` 并跳转到文档列表页
 - 文档列表已调用 `GET /api/knowledge-bases/{id}/documents` 并渲染（支持状态筛选）
 - 文件上传已调用 `POST /api/knowledge-bases/{id}/documents`（`UploadFile`）并保存到磁盘
+- PDF/TXT 上传后自动解析，状态从"解析中"流转到"已完成"或"解析失败"
+- 文档内容搜索已联调 `GET /api/knowledge-bases/{id}/search`，支持关键词 + 状态联合筛选 + 分页
 
 ## 项目目录结构
 
@@ -114,7 +131,9 @@ ai-knowledge-base/
 - `frontend/src/stores/` — Pinia 状态管理
 - `backend/app/api/routes/` — FastAPI 路由
 - `backend/app/schemas/` — Pydantic 数据模型
-- `backend/app/core/` — 配置
+- `backend/app/models/` — SQLAlchemy ORM 模型
+- `backend/app/services/` — 文档解析 + 全文搜索
+- `backend/app/core/` — 配置、数据库引擎、安全模块
 
 以下目录主要属于本地开发环境产物，不是项目核心成果本身：
 
@@ -143,28 +162,30 @@ npm run dev
 
 后端默认运行在 `http://127.0.0.1:8000`，前端在 `http://localhost:5173`。
 
-## 第 3 周接口清单
+## 第 4 周接口清单
 
-第 1-2 周接口基础上，第 3 周扩展了以下参数：
+第 1-3 周接口基础上，第 4 周完成了以下变更：
 
-1. `GET /api/knowledge-bases` — 新增 `keyword`（搜索）、`page`（分页页码）、`page_size`（每页条数）
-2. `GET /api/knowledge-bases/{id}/documents` — 新增 `status`（文档状态筛选）
-3. `POST /api/knowledge-bases/{id}/documents` — 升级为 `UploadFile` 文件上传，返回 `file_size`、`file_path`
+1. **全量接口数据库化** — 所有接口从 in-memory mock 迁移到 SQLite + SQLAlchemy
+2. **JWT 认证替换硬编码登录** — `POST /api/login` + `GET /api/me` 使用真实 JWT 验证
+3. **文档解析链路** — `POST /api/knowledge-bases/{id}/documents` 上传后自动解析 PDF/TXT
+4. **新增 `GET /{id}/documents/{doc_id}/content`** — 查看文档解析内容（前 5000 字符）
+5. **新增 `GET /{id}/search?q=&status=&page=&page_size=`** — FTS5 全文搜索，支持 snippet 高亮 + 状态筛选 + 分页
 
-后端返回统一分页格式：`PaginatedData{items, total, page, page_size}`。
+后端返回统一格式：`ApiResponse{code, message, data}`，分页数据为 `PaginatedData{items, total, page, page_size}`。
 
-## 第 3 周页面清单
+## 第 4 周页面清单
 
-第 1-2 周的 6 个页面全部完成 Element Plus 改造：
+第 4 周在 EP 改造完成的 6 个页面上，核心变更：
 
-| 页面 | 路径 | 核心 EP 组件 |
-|------|------|-------------|
-| 登录页 | `/login` | ElForm / ElInput / ElButton / ElAlert |
-| 工作台 | `/dashboard` | ElCard / ElStatistic / ElTag |
-| 知识库列表 | `/knowledge-bases` | ElTable / ElPagination / ElInput + Search icon |
-| 新建知识库 | `/knowledge-bases/create` | ElForm / ElInput / ElButton |
-| 文档列表/状态 | `/knowledge-bases/:id/documents` | ElTable / ElTag / ElSelect |
-| 文档上传 | `/knowledge-bases/:id/upload` | ElUpload（drag）/ ElIcon / ElButton |
+| 页面 | 路径 | 变更 |
+|------|------|------|
+| 登录页 | `/login` | 改造：调用 Pinia authStore.login() + axios 拦截器 |
+| 文档列表/搜索 | `/knowledge-bases/:id/documents` | 新增 ElInput 搜索框 + snippet 片段列 + 搜索/状态联动 + 分页 |
+| 工作台 | `/dashboard` | 不变 |
+| 知识库列表 | `/knowledge-bases` | 不变 |
+| 新建知识库 | `/knowledge-bases/create` | 不变 |
+| 文档上传 | `/knowledge-bases/:id/upload` | 不变 |
 
 ## 建议保留的截图
 
@@ -209,35 +230,47 @@ npm run dev
 
 第 3 周的项目已经从"知识库管理后台雏形"推进到"具备产品感的系统"。
 
-## 下周计划（Week 4）
+## 第 4 周完成内容总结
 
-### 1. 后端数据库
+- **数据库落地**：SQLite + SQLAlchemy 替换了 in-memory mock，User / KnowledgeBase / Document 三张持久化表
+- **JWT 认证**：从硬编码 mock 登录升级为真实 JWT 签发 + bcrypt 密码验证 + 路由级 Depends 保护
+- **前端认证闭环**：Pinia authStore + axios 拦截器（Bearer token + 401 跳转）+ 路由守卫
+- **PDF/TXT 解析流水线**：上传后自动调用 PyMuPDF 逐页提取文本，状态流转 pending → parsing → completed / failed
+- **FTS5 全文搜索**：SQLite FTS5 虚拟表 + MATCH 查询 + snippet 高亮，支持状态筛选和分页
+- **前端搜索交互**：文档列表页新增搜索框（300ms debounce）+ snippet 高亮渲染 + 搜索与状态联动 + 分页
 
-- 引入 SQLite + SQLAlchemy，替换 in-memory mock 数据
-- 用户、知识库、文档表模型定义
-- Alembic 迁移管理
+第 4 周的项目已经正式从"mock 原型"升级为"真实后端系统"。
 
-### 2. 文档解析流水线
+## 下周计划（Week 5）
 
-- PDF / TXT 文档内容解析
-- 文本分块（chunking）策略
-- 解析状态管理（待处理 → 解析中 → 已完成）
+### 1. 向量数据库
 
-### 3. 语义搜索
+- 引入 Qdrant（向量数据库）
+- 文档 Embedding 生成（sentence-transformers 或 OpenAI Embedding）
+- 向量存储与索引
 
-- 引入文本 Embedding（如 sentence-transformers）
-- 基于向量相似度的检索替代关键词搜索
-- 搜索结果显示片段高亮
+### 2. 语义检索
 
-### 4. 认证完善
+- 用向量相似度搜索替代 FTS5 关键词搜索
+- 混合检索（关键词 + 向量）策略
+- 搜索结果评分与排序
 
-- JWT 续期 / 刷新机制
-- 权限细分（管理员 / 普通用户）
+### 3. RAG 问答
+
+- LLM 接入（OpenAI API 或其他）
+- Query → 检索 → 上下文组装 → 生成回答
+- 流式输出
+
+### 4. 性能与体验
+
+- 文档解析分块（chunking）策略
+- 搜索响应时间优化
+- 前端搜索结果展示优化
 
 ## 当前阶段定位
 
 当前版本适合作为：
 
-- 第 3 周阶段性里程碑
-- 后续 Week 4 引入数据库、文档解析、语义搜索的稳定基础版本
+- 第 4 周阶段性里程碑
+- 后续 Week 5 引入向量检索与 RAG 问答的基础版本
 - AI 全栈转岗过程中的练习项目

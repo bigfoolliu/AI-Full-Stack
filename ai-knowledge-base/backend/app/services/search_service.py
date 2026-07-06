@@ -11,8 +11,10 @@ class SearchResultItem:
     id: int
     filename: str
     kb_id: int
+    status: str
     snippet: str
     score: float
+    created_at: str
 
 
 @dataclass
@@ -50,44 +52,62 @@ def search_documents(
     db: Session,
     kb_id: int,
     keyword: str,
+    status: str | None = None,
     page: int = 1,
     page_size: int = 10,
 ) -> SearchResults:
     search_term = _fts_query(keyword)
 
+    status_filter = ""
+    if status:
+        status_filter = " AND d.status = :status"
+
     count_sql = text(
-        "SELECT COUNT(*) FROM document_fts WHERE document_fts MATCH :q AND kb_id = :kb_id"
+        """\
+SELECT COUNT(*)
+FROM document_fts f
+JOIN documents d ON d.id = f.doc_id
+WHERE f.document_fts MATCH :q AND f.kb_id = :kb_id"""
+        + status_filter
     )
-    total = db.execute(count_sql, {"q": search_term, "kb_id": kb_id}).scalar() or 0
+    params = {"q": search_term, "kb_id": kb_id}
+    if status:
+        params["status"] = status
+    total = db.execute(count_sql, params).scalar() or 0
 
     data_sql = text(
         """\
-SELECT doc_id, filename, kb_id,
-       snippet(document_fts, 3, '<mark>', '</mark>', '...', 32) AS snippet,
-       rank
-FROM document_fts
-WHERE document_fts MATCH :q AND kb_id = :kb_id
-ORDER BY rank
+SELECT f.doc_id, f.filename, f.kb_id, d.status, d.created_at,
+       snippet(f.document_fts, 3, '<mark>', '</mark>', '...', 32) AS snippet,
+       f.rank
+FROM document_fts f
+JOIN documents d ON d.id = f.doc_id
+WHERE f.document_fts MATCH :q AND f.kb_id = :kb_id"""
+        + status_filter
+        + """
+ORDER BY f.rank
 LIMIT :limit OFFSET :offset
 """
     )
-    rows = db.execute(
-        data_sql,
-        {
-            "q": search_term,
-            "kb_id": kb_id,
-            "limit": page_size,
-            "offset": (page - 1) * page_size,
-        },
-    ).fetchall()
+    data_params = {
+        "q": search_term,
+        "kb_id": kb_id,
+        "limit": page_size,
+        "offset": (page - 1) * page_size,
+    }
+    if status:
+        data_params["status"] = status
+    rows = db.execute(data_sql, data_params).fetchall()
 
     items = [
         SearchResultItem(
             id=row.doc_id,
             filename=row.filename,
             kb_id=row.kb_id,
+            status=row.status,
             snippet=row.snippet,
             score=row.rank,
+            created_at=row.created_at.strftime("%Y-%m-%d %H:%M:%S"),
         )
         for row in rows
     ]

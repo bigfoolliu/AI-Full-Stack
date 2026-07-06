@@ -74,6 +74,24 @@ export const getKnowledgeBaseDocuments = async (id: string | number, status?: st
   return response.data;
 };
 
+export interface SearchDocumentItem {
+  id: number;
+  filename: string;
+  status: string;
+  snippet: string;
+  updated_at: string;
+}
+
+export const searchKnowledgeBaseDocuments = async (
+  id: string | number,
+  params: { q: string; status?: string; page?: number; pageSize?: number }
+) => {
+  const response = await http.get<
+    ApiResponse<PaginatedData<SearchDocumentItem>>
+  >(`/api/knowledge-bases/${id}/search`, { params });
+  return response.data;
+};
+
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
   `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
 
