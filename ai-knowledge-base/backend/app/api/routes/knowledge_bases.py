@@ -12,6 +12,7 @@ from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
 from app.services.document_parser import parse_document
+from app.services.search_service import create_fts_index, search_documents
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
 
@@ -200,10 +201,12 @@ async def upload_knowledge_base_document(
         text = parse_document(file_path, ext)
         doc.content = text
         doc.status = "completed"
+        db.commit()
+        create_fts_index(db, doc)
     except Exception as e:
         doc.content = str(e)
         doc.status = "failed"
-    db.commit()
+        db.commit()
 
     return ApiResponse(
         code=0,
@@ -255,6 +258,52 @@ def get_document_content(
             "status": _status_label(doc.status),
             "content": content_preview,
             "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+        },
+    )
+
+
+@router.get(
+    "/knowledge-bases/{knowledge_base_id}/search", response_model=ApiResponse
+)
+def search_knowledge_base_documents(
+    knowledge_base_id: int,
+    q: str = Query(default="", min_length=1),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    if not q.strip():
+        return ApiResponse(
+            code=0,
+            message="ok",
+            data={"items": [], "total": 0, "page": page, "page_size": page_size},
+        )
+
+    results = search_documents(
+        db, kb_id=knowledge_base_id, keyword=q, page=page, page_size=page_size
+    )
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "items": [
+                {
+                    "id": item.id,
+                    "filename": item.filename,
+                    "kb_id": item.kb_id,
+                    "snippet": item.snippet,
+                }
+                for item in results.items
+            ],
+            "total": results.total,
+            "page": results.page,
+            "page_size": results.page_size,
         },
     )
 

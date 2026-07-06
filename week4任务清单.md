@@ -345,19 +345,19 @@ frontend/src/
 
 #### 任务清单
 
-- [ ] 在 `app/models/document.py` 或单独模块中定义 FTS5 虚拟表 `document_fts`
+- [x] 在 `app/models/document.py` 或单独模块中定义 FTS5 虚拟表 `document_fts`
   - 包含列：`doc_id`、`kb_id`、`filename`、`content`
   - 使用 `CREATE VIRTUAL TABLE document_fts USING fts5(...)`
-- [ ] 创建 `app/services/search_service.py`
+- [x] 创建 `app/services/search_service.py`
   - `create_fts_index(db, document)` — 为解析完成的文档建立 FTS5 索引
   - `search_documents(db, kb_id: int, keyword: str, page, page_size) -> PaginatedData`
   - 使用 FTS5 MATCH 查询，返回 snippet 高亮片段
   - 结果包含：文档 ID、文件名、kb_id、片段、匹配得分
-- [ ] 文档解析完成后自动调用 `create_fts_index` 建索引
-- [ ] 创建 `GET /api/knowledge-bases/{id}/search?q=keyword&page=1&page_size=10`
+- [x] 文档解析完成后自动调用 `create_fts_index` 建索引
+- [x] 创建 `GET /api/knowledge-bases/{id}/search?q=keyword&page=1&page_size=10`
   - 调用 search_service
   - 返回 PaginatedData 格式
-- [ ] 用 curl 验证 FTS5 搜索（精确匹配、模糊匹配、中文分词效果）
+- [x] 用 curl 验证 FTS5 搜索（精确匹配、模糊匹配、中文分词效果）
 
 #### 今日重点
 
@@ -366,11 +366,11 @@ frontend/src/
 
 #### 验收标准
 
-- [ ] 搜索关键词可召回相关文档
-- [ ] 搜索结果包含文档摘要/高亮片段
-- [ ] 搜索接口支持分页
-- [ ] FTS5 索引随文档解析自动更新
-- [ ] 新上传+解析的文档可被搜索到
+- [x] 搜索关键词可召回相关文档
+- [x] 搜索结果包含文档摘要/高亮片段
+- [x] 搜索接口支持分页
+- [x] FTS5 索引随文档解析自动更新
+- [x] 新上传+解析的文档可被搜索到
 
 ---
 

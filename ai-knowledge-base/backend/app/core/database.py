@@ -17,6 +17,20 @@ def init_db():
 
     Base.metadata.create_all(bind=engine)
 
+    with engine.connect() as conn:
+        conn.exec_driver_sql(
+            """\
+CREATE VIRTUAL TABLE IF NOT EXISTS document_fts USING fts5(
+    doc_id UNINDEXED,
+    kb_id UNINDEXED,
+    filename,
+    content,
+    tokenize='unicode61'
+)
+"""
+        )
+        conn.commit()
+
     session = SessionLocal()
     try:
         existing_user = session.query(User).filter(User.username == "admin").first()
