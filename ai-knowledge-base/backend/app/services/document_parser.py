@@ -15,6 +15,10 @@ def parse_document(file_path: str, file_type: str) -> str:
 
 
 def _parse_pdf(file_path: str) -> str:
+    """
+    解析 pdf 文件
+    """
+
     try:
         doc = fitz.open(file_path)
         pages = []
@@ -34,6 +38,10 @@ def _parse_pdf(file_path: str) -> str:
 
 
 def _parse_txt(file_path: str) -> str:
+    """
+    解析文本文件
+    """
+
     encodings = ["utf-8", "gbk", "gb2312", "latin-1"]
     for enc in encodings:
         try:

@@ -1,3 +1,7 @@
+"""
+健康检查 api
+"""
+
 from fastapi import APIRouter
 
 from app.schemas.common import ApiResponse

@@ -1,3 +1,7 @@
+"""
+安全
+"""
+
 from datetime import datetime, timedelta, timezone
 
 import bcrypt

@@ -1,3 +1,7 @@
+"""
+知识库 api
+"""
+
 import os
 import time
 
@@ -25,6 +29,10 @@ def get_knowledge_bases(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """
+    知识库列表
+    """
+
     query = db.query(KnowledgeBase)
 
     if keyword:
@@ -77,6 +85,10 @@ def create_knowledge_base(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """
+    创建知识库
+    """
+
     kb = KnowledgeBase(name=payload.name, description=payload.description)
     db.add(kb)
     db.commit()
@@ -101,6 +113,10 @@ def get_knowledge_base_detail(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """
+    查看单个知识库的详细信息
+    """
+
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -133,6 +149,10 @@ def get_knowledge_base_documents(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """
+    查看单个知识库下的所有文档
+    """
+
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -167,7 +187,9 @@ async def upload_knowledge_base_document(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
-    """上传文档的时候开始解析文档"""
+    """
+    上传文档的时候开始解析文档
+    """
 
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
@@ -262,9 +284,7 @@ def get_document_content(
     )
 
 
-@router.get(
-    "/knowledge-bases/{knowledge_base_id}/search", response_model=ApiResponse
-)
+@router.get("/knowledge-bases/{knowledge_base_id}/search", response_model=ApiResponse)
 def search_knowledge_base_documents(
     knowledge_base_id: int,
     q: str = Query(default="", min_length=1),

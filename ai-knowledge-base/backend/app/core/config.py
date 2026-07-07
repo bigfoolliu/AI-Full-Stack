@@ -1,3 +1,7 @@
+"""
+核心配置
+"""
+
 import os
 
 APP_NAME = "AI Knowledge Base Backend"

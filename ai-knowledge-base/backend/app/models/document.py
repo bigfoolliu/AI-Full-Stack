@@ -1,3 +1,7 @@
+"""
+文档模型
+"""
+
 from sqlalchemy import Column, DateTime, Integer, String, Text, func
 
 from app.core.database import Base

@@ -1,3 +1,7 @@
+"""
+知识库模型
+"""
+
 from sqlalchemy import Column, DateTime, Integer, String, func
 
 from app.core.database import Base
