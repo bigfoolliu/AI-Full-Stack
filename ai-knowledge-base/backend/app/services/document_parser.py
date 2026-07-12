@@ -1,6 +1,7 @@
 import os
 
 import fitz
+from docx import Document as DocxDocument
 
 
 def parse_document(file_path: str, file_type: str) -> str:
@@ -8,6 +9,8 @@ def parse_document(file_path: str, file_type: str) -> str:
 
     if ext == "pdf":
         return _parse_pdf(file_path)
+    if ext in ("docx", "doc"):
+        return _parse_docx(file_path)
     if ext == "txt":
         return _parse_txt(file_path)
 
@@ -35,6 +38,22 @@ def _parse_pdf(file_path: str) -> str:
         return result
     except Exception as e:
         raise RuntimeError(f"PDF 解析失败: {e}")
+
+
+def _parse_docx(file_path: str) -> str:
+    try:
+        doc = DocxDocument(file_path)
+        paragraphs = []
+        for para in doc.paragraphs:
+            text = para.text.strip()
+            if text:
+                paragraphs.append(text)
+        result = "\n\n".join(paragraphs)
+        if not result.strip():
+            raise ValueError("Word 文件未提取到文本内容")
+        return result
+    except Exception as e:
+        raise RuntimeError(f"Word 解析失败: {e}")
 
 
 def _parse_txt(file_path: str) -> str:
