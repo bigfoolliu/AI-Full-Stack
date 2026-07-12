@@ -57,6 +57,14 @@
 - **路由守卫**：Vue Router 全局前置守卫检查 isLoggedIn，未登录重定向到 `/login`
 - **文档搜索**：文档列表页新增 `ElInput` 搜索框（300ms debounce） + snippet 高亮展示 + 搜索与状态筛选联动 + 搜索结果分页
 
+### 前端（第 5 周新增）
+
+- **文档处理按钮**：文档列表页每行新增"处理"按钮，调用 `POST /documents/{id}/process` 触发解析→切片→向量化→入库全流程
+- **处理状态自动轮询**：触发处理后每 2 秒自动轮询文档列表，直到无文档处于"处理中"状态
+- **文档内容查看**：新增"查看"按钮，`el-dialog` 弹窗展示文档解析后的文本内容
+- **状态标签配色统一**：待处理→灰色、处理中→蓝色、已完成→绿色、处理失败→红色
+- **状态筛选选项修复**：filter 值与后端 `_status_label` 对齐，新增"处理失败"选项
+
 ### 前端（第 3 周新增）
 
 - **知识库列表页** — 全面 EP 化：`ElTable` + `ElPagination` 分页 + `ElInput` 搜索（300ms debounce）+ 搜索与分页联动
@@ -101,6 +109,17 @@
 - **文档解析流水线**：PyMuPDF（fitz）PDF 逐页提取 + TXT 编码回退读取，状态流转 pending → parsing → completed / failed
 - **FTS5 全文搜索**：SQLite FTS5 虚拟表 + MATCH 查询 + snippet 高亮 + JOIN documents 表获取状态/时间
 - **新增接口**：`GET /content` 文档内容查看、`GET /search` 关键词搜索（支持 status 筛选 + 分页）
+
+### 后端（第 5 周新增）
+
+- **文档解析流水线升级**：新增 Word (.docx) 解析支持；状态标签从 `parsing` 改为 `processing`
+- **Chunk 切分服务**：`chunk_service.py` 实现 `chunk_text()` 固定大小滑动窗口 + `recursive_chunk_text()` 段落→句子→固定回退；每个 chunk 携带完整元数据（doc_id / kb_id / chunk_index / page_number）
+- **向量化与 Qdrant 集成**：`vector_service.py` 封装 Embedding API（DashScope text-embedding-v3, 1024 维）+ Qdrant collection 自动创建、batch upsert、语义搜索、按 kb_id 过滤、按 doc_id 删除
+- **全流程编排**：`process_service.py` 串联 parse → chunk → embed → Qdrant → FTS；`POST /documents/{id}/process` 接口手动触发；幂等处理（重复触发先删后插）
+- **语义检索**：`POST /api/knowledge-bases/{id}/search` 接口，支持 query + top_k + kb_id 过滤
+- **配置泛化**：从 OpenAI 专用配置迁移为通用 `EMBEDDING_API_KEY`/`EMBEDDING_BASE_URL`/`EMBEDDING_MODEL`/`EMBEDDING_DIMENSION`
+- **Docker Compose Qdrant**：`docker-compose.yml` 增加 Qdrant 服务（端口 6333/6334，数据持久化到 `data/qdrant/`）
+- **Pre-commit 规范**：`.pre-commit-config.yaml` + ruff 格式化/排序 + prettier 前端格式化
 
 ### 联调情况
 
@@ -230,40 +249,56 @@ npm run dev
 
 第 3 周的项目已经从"知识库管理后台雏形"推进到"具备产品感的系统"。
 
-## 第 4 周完成内容总结
+## 第 5 周接口清单
 
-- **数据库落地**：SQLite + SQLAlchemy 替换了 in-memory mock，User / KnowledgeBase / Document 三张持久化表
-- **JWT 认证**：从硬编码 mock 登录升级为真实 JWT 签发 + bcrypt 密码验证 + 路由级 Depends 保护
-- **前端认证闭环**：Pinia authStore + axios 拦截器（Bearer token + 401 跳转）+ 路由守卫
-- **PDF/TXT 解析流水线**：上传后自动调用 PyMuPDF 逐页提取文本，状态流转 pending → parsing → completed / failed
-- **FTS5 全文搜索**：SQLite FTS5 虚拟表 + MATCH 查询 + snippet 高亮，支持状态筛选和分页
-- **前端搜索交互**：文档列表页新增搜索框（300ms debounce）+ snippet 高亮渲染 + 搜索与状态联动 + 分页
+第 5 周新增以下接口：
 
-第 4 周的项目已经正式从"mock 原型"升级为"真实后端系统"。
+1. `POST /api/documents/{id}/process` — 触发文档解析 → 切分 → 向量化 → 入库
+2. `GET /api/knowledge-bases/{id}/documents` — 知识库下文档列表（含中文状态标签）
+3. `POST /api/knowledge-bases/{id}/search` — 按知识库语义检索（Qdrant 向量相似度）
 
-## 下周计划（Week 5）
+## 第 5 周页面清单
 
-### 1. 向量数据库
+| 页面 | 路径 | 变更 |
+|------|------|------|
+| 文档列表/状态 | `/knowledge-bases/:id/documents` | 新增"处理"按钮 + loading 态 + 轮询刷新；新增"查看"按钮 + 内容弹窗；修复状态标签配色；修复筛选选项 |
 
-- 引入 Qdrant（向量数据库）
-- 文档 Embedding 生成（sentence-transformers 或 OpenAI Embedding）
-- 向量存储与索引
+## 第 5 周完成内容总结
 
-### 2. 语义检索
+- **文档解析升级**：新增 Word (.docx) 解析，状态标签从 `parsing`→`processing`
+- **Chunk 切分服务**：固定大小滑动窗口 + 递归切分策略，携带完整元数据
+- **向量化与 Qdrant**：DashScope text-embedding-v3 → 1024 维向量 → Qdrant 存储，支持语义搜索与 kb_id 过滤
+- **全流程编排**：上传→手动触发处理→parse→chunk→embed→Qdrant+FTS，状态自动流转，幂等处理
+- **前后端状态联动**：前端"处理"按钮触发后端流水线，轮询刷新状态，正确配色显示
+- **Docker Compose 集成**：Qdrant 容器化运行，数据持久化到 `data/qdrant/`
+- **Pre-commit 规范**：ruff 格式化 + prettier 前端格式化，代码风格统一
 
-- 用向量相似度搜索替代 FTS5 关键词搜索
-- 混合检索（关键词 + 向量）策略
-- 搜索结果评分与排序
+第 5 周的项目已经从"真实后端系统"推进到 **「RAG 最小闭环」**。
 
-### 3. RAG 问答
+## 下周计划（Week 6）
 
-- LLM 接入（OpenAI API 或其他）
-- Query → 检索 → 上下文组装 → 生成回答
-- 流式输出
+### 1. RAG 问答对话
+
+- LLM 接入（DashScope / Qwen API）
+- `POST /api/knowledge-bases/{id}/chat` 接口
+- query → 向量检索 → 上下文组装 → LLM 生成回答
+- 流式输出（Server-Sent Events）
+
+### 2. 对话管理
+
+- 对话记录与历史存储
+- 上下文管理（将聊天历史注入 prompt）
+- 多轮对话支持
+
+### 3. 前端对话界面
+
+- 类 Chat 对话框组件
+- Markdown 渲染
+- 流式消息展示
+- 历史消息加载
 
 ### 4. 性能与体验
 
-- 文档解析分块（chunking）策略
 - 搜索响应时间优化
 - 前端搜索结果展示优化
 
@@ -271,6 +306,6 @@ npm run dev
 
 当前版本适合作为：
 
-- 第 4 周阶段性里程碑
-- 后续 Week 5 引入向量检索与 RAG 问答的基础版本
+- 第 5 周阶段性里程碑（RAG 最小闭环）
+- 后续 Week 6 引入 LLM 问答与流式对话的基础版本
 - AI 全栈转岗过程中的练习项目
