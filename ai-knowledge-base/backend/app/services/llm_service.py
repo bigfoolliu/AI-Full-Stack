@@ -3,7 +3,7 @@ from typing import Generator
 
 from openai import OpenAI
 
-from app.core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+from app.core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, MAX_HISTORY_TOKENS
 
 
 class LlmService:
@@ -83,13 +83,23 @@ class LlmService:
         history: list[dict] | None = None,
     ) -> list[dict]:
         system_prompt = self._build_system_prompt(context_chunks)
-        messages = [{"role": "system", "content": system_prompt}]
+        messages: list[dict] = []
+        chars_budget = MAX_HISTORY_TOKENS * 4
 
         if history:
-            for msg in history:
-                if msg.get("role") in ("user", "assistant"):
-                    messages.append(msg)
+            trimmed: list[dict] = []
+            chars_used = len(system_prompt) + len(query)
+            for msg in reversed(history):
+                if msg.get("role") not in ("user", "assistant"):
+                    continue
+                msg_chars = len(msg.get("content", ""))
+                if chars_used + msg_chars > chars_budget:
+                    break
+                trimmed.insert(0, msg)
+                chars_used += msg_chars
+            messages.extend(trimmed)
 
+        messages.insert(0, {"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": query})
         return messages
 

@@ -34,6 +34,7 @@ const currentAnswer = ref('');
 const currentSources = ref<SourceItem[]>([]);
 const error = ref('');
 const abortController = ref<AbortController | null>(null);
+const lastSentQuery = ref('');
 
 const messageListRef = ref<HTMLElement | null>(null);
 
@@ -51,6 +52,7 @@ watch([messages, currentAnswer], scrollToBottom, { deep: true });
 const sendMessage = async () => {
   const text = inputText.value.trim();
   if (!text || loading.value) return;
+  lastSentQuery.value = text;
 
   inputText.value = '';
   error.value = '';
@@ -109,6 +111,14 @@ const retry = () => {
   error.value = '';
 };
 
+const requery = (msg: Message, idx: number) => {
+  if (loading.value) return;
+  messages.value = messages.value.slice(0, idx);
+  inputText.value = msg.content;
+  lastSentQuery.value = msg.content;
+  sendMessage();
+};
+
 const newChat = () => {
   messages.value = [];
   currentAnswer.value = '';
@@ -164,6 +174,15 @@ onMounted(async () => {
         <div v-if="msg.role === 'user'" class="chat-msg chat-msg--user">
           <div class="chat-bubble chat-bubble--user">
             <p class="chat-bubble__text">{{ msg.content }}</p>
+            <el-button
+              size="small"
+              text
+              class="chat-requery-btn"
+              :disabled="loading"
+              @click="requery(msg, idx)"
+            >
+              重新提问
+            </el-button>
           </div>
         </div>
 
@@ -322,6 +341,17 @@ onMounted(async () => {
   margin: 0;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.chat-requery-btn {
+  margin-top: 6px;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+}
+
+.chat-requery-btn:hover {
+  color: #ffffff;
 }
 
 .chat-bubble__markdown {
