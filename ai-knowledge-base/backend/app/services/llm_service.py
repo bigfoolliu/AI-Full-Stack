@@ -1,3 +1,6 @@
+import json
+from typing import Generator
+
 from openai import OpenAI
 
 from app.core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
@@ -27,15 +30,7 @@ class LlmService:
                 "sources": context_chunks,
             }
 
-        system_prompt = self._build_system_prompt(context_chunks)
-        messages = [{"role": "system", "content": system_prompt}]
-
-        if history:
-            for msg in history:
-                if msg.get("role") in ("user", "assistant"):
-                    messages.append(msg)
-
-        messages.append({"role": "user", "content": query})
+        messages = self._build_messages(query, context_chunks, history)
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -50,6 +45,53 @@ class LlmService:
             "answer": answer,
             "sources": context_chunks,
         }
+
+    def chat_stream(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        history: list[dict] | None = None,
+    ) -> Generator[str, None, None]:
+        if not self.client:
+            yield f"data: {json.dumps({'type': 'token', 'content': 'LLM API Key 未配置，无法回答问题。'})}\n\n"
+            yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
+            yield f"data: {json.dumps({'type': 'done'})}\n\n"
+            return
+
+        messages = self._build_messages(query, context_chunks, history)
+
+        stream = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+            stream=True,
+        )
+
+        for chunk in stream:
+            delta = chunk.choices[0].delta if chunk.choices else None
+            if delta and delta.content:
+                yield f"data: {json.dumps({'type': 'token', 'content': delta.content})}\n\n"
+
+        yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+
+    def _build_messages(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        history: list[dict] | None = None,
+    ) -> list[dict]:
+        system_prompt = self._build_system_prompt(context_chunks)
+        messages = [{"role": "system", "content": system_prompt}]
+
+        if history:
+            for msg in history:
+                if msg.get("role") in ("user", "assistant"):
+                    messages.append(msg)
+
+        messages.append({"role": "user", "content": query})
+        return messages
 
     @staticmethod
     def _build_system_prompt(context_chunks: list[dict]) -> str:

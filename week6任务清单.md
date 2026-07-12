@@ -116,15 +116,15 @@
 
 ### 任务清单
 
-- [ ] 创建 `POST /api/knowledge-bases/{id}/chat/stream` 接口
-  - [ ] 使用 FastAPI `StreamingResponse` + `EventSourceResponse`
-  - [ ] 先检索 + 组装 prompt（同步完成）
-  - [ ] 流式调用 LLM API，逐 token yield
-  - [ ] 格式：`data: {"type": "token", "content": "你"}\n\n`
-  - [ ] 引用来源：`data: {"type": "sources", "data": [...]}\n\n`
-  - [ ] 结束标记：`data: {"type": "done"}\n\n`
-- [ ] 前端使用 `fetch` + `ReadableStream` 接收 SSE
-- [ ] 处理连接中断和错误
+- [x] 创建 `POST /api/knowledge-bases/{id}/chat/stream` 接口
+  - [x] 使用 FastAPI `StreamingResponse`
+  - [x] 先检索 + 组装 prompt（同步完成）
+  - [x] 流式调用 LLM API，逐 token yield
+  - [x] 格式：`data: {"type": "token", "content": "你"}\n\n`
+  - [x] 引用来源：`data: {"type": "sources", "data": [...]}\n\n`
+  - [x] 结束标记：`data: {"type": "done"}\n\n`
+- [x] 前端使用 `fetch` + `ReadableStream` 接收 SSE
+- [x] 处理连接中断和错误
 
 ### 验收标准
 

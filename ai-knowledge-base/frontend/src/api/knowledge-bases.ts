@@ -112,6 +112,85 @@ export const getDocumentContent = async (kbId: string | number, docId: number) =
   return response.data;
 };
 
+export interface ChatStreamCallbacks {
+  onToken: (token: string) => void;
+  onSources: (sources: any[]) => void;
+  onDone: () => void;
+  onError: (error: Error) => void;
+}
+
+export const chatStream = (
+  kbId: number,
+  payload: { query: string; history?: { role: string; content: string }[]; top_k?: number },
+  callbacks: ChatStreamCallbacks
+): AbortController => {
+  const controller = new AbortController();
+  const token = localStorage.getItem("ai-kb-token");
+
+  (async () => {
+    try {
+      const response = await fetch(
+        `http://127.0.0.1:8000/api/knowledge-bases/${kbId}/chat/stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(payload),
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("Response body is not readable");
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const event = JSON.parse(line.slice(6));
+            switch (event.type) {
+              case "token":
+                callbacks.onToken(event.content);
+                break;
+              case "sources":
+                callbacks.onSources(event.data);
+                break;
+              case "done":
+                callbacks.onDone();
+                break;
+            }
+          } catch {
+            // skip malformed events
+          }
+        }
+      }
+    } catch (err: any) {
+      if (err.name === "AbortError") return;
+      callbacks.onError(err instanceof Error ? err : new Error(String(err)));
+    }
+  })();
+
+  return controller;
+};
+
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
   `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
 

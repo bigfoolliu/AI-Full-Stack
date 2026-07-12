@@ -6,6 +6,7 @@ import os
 import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -398,6 +399,32 @@ def chat_with_knowledge_base(
             "answer": result["answer"],
             "sources": result["sources"],
         },
+    )
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/chat/stream")
+def chat_stream_with_knowledge_base(
+    knowledge_base_id: int,
+    req: ChatRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> StreamingResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    context_chunks = []
+    if EMBEDDING_API_KEY:
+        svc = VectorService()
+        try:
+            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+        except RuntimeError:
+            pass
+
+    llm = LlmService()
+    return StreamingResponse(
+        llm.chat_stream(query=req.query, context_chunks=context_chunks, history=req.history),
+        media_type="text/event-stream",
     )
 
 
