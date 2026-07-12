@@ -9,13 +9,18 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.core.config import UPLOAD_DIR
+from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
 from app.core.security import get_current_user, get_db
 from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
-from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
+from app.schemas.knowledge_base import (
+    CreateKnowledgeBaseRequest,
+    KnowledgeBaseItem,
+    SemanticSearchRequest,
+)
 from app.services.process_service import process_document
 from app.services.search_service import search_documents
+from app.services.vector_service import VectorService
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
 
@@ -336,6 +341,30 @@ def search_knowledge_base_documents(
             "page_size": results.page_size,
         },
     )
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/search", response_model=ApiResponse)
+def search_knowledge_base_semantic(
+    knowledge_base_id: int,
+    req: SemanticSearchRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    if not EMBEDDING_API_KEY:
+        return ApiResponse(
+            code=1,
+            message="语义搜索需要配置 DASHSCOPE_API_KEY",
+            data=[],
+        )
+
+    svc = VectorService()
+    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+
+    return ApiResponse(code=0, message="ok", data=results)
 
 
 def _status_label(status: str) -> str:

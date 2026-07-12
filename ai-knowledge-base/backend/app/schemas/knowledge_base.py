@@ -12,3 +12,8 @@ class KnowledgeBaseItem(BaseModel):
 class CreateKnowledgeBaseRequest(BaseModel):
     name: str
     description: str
+
+
+class SemanticSearchRequest(BaseModel):
+    query: str
+    top_k: int = 5

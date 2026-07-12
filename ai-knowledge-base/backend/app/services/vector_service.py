@@ -119,6 +119,7 @@ class VectorService:
                 "chunk_index": hit.payload.get("chunk_index"),
                 "content": hit.payload.get("content"),
                 "filename": hit.payload.get("filename", ""),
+                "page_number": hit.payload.get("page_number"),
                 "score": hit.score,
             }
             for hit in hits

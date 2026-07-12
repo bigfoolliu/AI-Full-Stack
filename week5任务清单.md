@@ -207,7 +207,7 @@ uploaded → processing → completed
 
 ---
 
-## Day 5：按知识库检索（后端）
+## Day 5：按知识库检索（后端） ✅
 
 ### 目标
 
@@ -215,12 +215,12 @@ uploaded → processing → completed
 
 ### 任务清单
 
-- [ ] 在 `vector_service.py` 中实现 `search` 方法
-- [ ] 接收查询文本 → 向量化 → Qdrant search
-- [ ] 支持按 `kb_id` 过滤（Payload Filter）
-- [ ] 支持返回 Top-k（默认 5）
-- [ ] 检索结果包含：文档片段、文件名、得分、来源
-- [ ] 编写 `POST /api/knowledge-bases/{id}/search` 接口
+- [x] 在 `vector_service.py` 中实现 `search` 方法
+- [x] 接收查询文本 → 向量化 → Qdrant search
+- [x] 支持按 `kb_id` 过滤（Payload Filter）
+- [x] 支持返回 Top-k（默认 5）
+- [x] 检索结果包含：文档片段、文件名、得分、来源、页码
+- [x] 编写 `POST /api/knowledge-bases/{id}/search` 接口
 
 ### 接口示例
 
