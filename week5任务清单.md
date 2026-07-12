@@ -137,7 +137,7 @@
 
 ---
 
-## Day 3：向量化与 Qdrant 写入
+## Day 3：向量化与 Qdrant 写入 ✅
 
 ### 目标
 
@@ -145,13 +145,13 @@
 
 ### 任务清单
 
-- [ ] 在 `docker-compose.yml` 中增加 Qdrant 服务
-- [ ] 创建 `app/services/vector_service.py`
-- [ ] 集成 Embedding API（可先使用 OpenAI `text-embedding-ada-002` 或本地模型）
-- [ ] 实现 Qdrant 客户端初始化
-- [ ] 创建 Collection（向量维度、距离算法、配置）
-- [ ] 实现批量写入 Points（向量 + Payload）
-- [ ] 验证 Qdrant 中数据已写入
+- [x] 在 `docker-compose.yml` 中增加 Qdrant 服务
+- [x] 创建 `app/services/vector_service.py`
+- [x] 集成 Embedding API（OpenAI `text-embedding-3-small`，1536 维）
+- [x] 实现 Qdrant 客户端初始化
+- [x] 创建 Collection（1536 维，Cosine 距离，自动创建）
+- [x] 实现批量写入 Points（向量 + Payload）
+- [x] 验证 Qdrant 中数据已写入（`scripts/test_vector.py` 测试通过）
 
 ### docker-compose 新增
 
