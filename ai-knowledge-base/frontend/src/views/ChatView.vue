@@ -26,6 +26,7 @@ const route = useRoute();
 const router = useRouter();
 const knowledgeBaseId = route.params.id as string;
 const kbName = ref('');
+const documentCount = ref(0);
 
 const messages = ref<Message[]>([]);
 const inputText = ref('');
@@ -35,6 +36,7 @@ const currentSources = ref<SourceItem[]>([]);
 const error = ref('');
 const abortController = ref<AbortController | null>(null);
 const lastSentQuery = ref('');
+const expandedKeys = ref<Set<string>>(new Set());
 
 const messageListRef = ref<HTMLElement | null>(null);
 
@@ -141,6 +143,31 @@ const formatScore = (score: number) => {
   return (score * 100).toFixed(1) + '%';
 };
 
+const toggleSource = (key: string) => {
+  const next = new Set(expandedKeys.value);
+  if (next.has(key)) {
+    next.delete(key);
+  } else {
+    next.add(key);
+  }
+  expandedKeys.value = next;
+};
+
+const formatTime = (ts: number) => {
+  const now = Date.now();
+  const diff = now - ts;
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟前`;
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const hhmm = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return hhmm;
+  if (d.getFullYear() === today.getFullYear())
+    return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hhmm}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${hhmm}`;
+};
+
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -152,6 +179,7 @@ onMounted(async () => {
   const detail = await getKnowledgeBaseDetail(knowledgeBaseId);
   if (detail.code === 0 && detail.data) {
     kbName.value = detail.data.name;
+    documentCount.value = detail.data.document_count;
   }
 });
 </script>
@@ -170,35 +198,64 @@ onMounted(async () => {
     </header>
 
     <div ref="messageListRef" class="chat-messages">
+      <div v-if="documentCount === 0 && messages.length === 0" class="chat-empty-alert">
+        该知识库暂无文档，请先<a
+          class="chat-empty-alert__link"
+          :href="`/knowledge-bases/${knowledgeBaseId}/documents`"
+          >上传文档</a
+        >后再提问。
+      </div>
       <template v-for="(msg, idx) in messages" :key="idx">
         <div v-if="msg.role === 'user'" class="chat-msg chat-msg--user">
-          <div class="chat-bubble chat-bubble--user">
-            <p class="chat-bubble__text">{{ msg.content }}</p>
-            <el-button
-              size="small"
-              text
-              class="chat-requery-btn"
-              :disabled="loading"
-              @click="requery(msg, idx)"
-            >
-              重新提问
-            </el-button>
+          <div class="chat-msg__body chat-msg__body--user">
+            <div class="chat-bubble chat-bubble--user">
+              <p class="chat-bubble__text">{{ msg.content }}</p>
+              <el-button
+                size="small"
+                text
+                class="chat-requery-btn"
+                :disabled="loading"
+                @click="requery(msg, idx)"
+              >
+                重新提问
+              </el-button>
+            </div>
+            <p class="chat-timestamp">{{ formatTime(msg.timestamp) }}</p>
           </div>
         </div>
 
         <div v-else class="chat-msg chat-msg--assistant">
-          <div class="chat-bubble chat-bubble--assistant">
-            <div class="chat-bubble__markdown" v-html="mdRenderer(msg.content)" />
-            <div v-if="msg.sources && msg.sources.length > 0" class="chat-sources">
-              <div class="chat-sources__title">引用来源</div>
-              <div v-for="(source, si) in msg.sources" :key="si" class="chat-source-card">
-                <div class="chat-source-card__header">
-                  <span class="chat-source-card__file">{{ source.filename }}</span>
-                  <span class="chat-source-card__score">{{ formatScore(source.score) }}</span>
-                </div>
-                <p class="chat-source-card__preview">{{ formatSource(source) }}</p>
+          <div class="chat-msg__body chat-msg__body--assistant">
+            <div class="chat-bubble chat-bubble--assistant">
+              <div class="chat-bubble__markdown" v-html="mdRenderer(msg.content)" />
+              <div v-if="msg.sources" class="chat-sources">
+                <div class="chat-sources__title">引用来源</div>
+                <template v-if="msg.sources.length > 0">
+                  <div v-for="(source, si) in msg.sources" :key="si" class="chat-source-card">
+                    <div class="chat-source-card__header">
+                      <span class="chat-source-card__file">{{ source.filename }}</span>
+                      <span class="chat-source-card__score">{{ formatScore(source.score) }}</span>
+                    </div>
+                    <p class="chat-source-card__preview">
+                      {{
+                        expandedKeys.has(`msg-${idx}-${si}`) ? source.content : formatSource(source)
+                      }}
+                    </p>
+                    <button
+                      v-if="source.content.length > 120"
+                      class="chat-source-card__expand"
+                      @click="toggleSource(`msg-${idx}-${si}`)"
+                    >
+                      {{ expandedKeys.has(`msg-${idx}-${si}`) ? '收起' : '展开完整内容' }}
+                    </button>
+                  </div>
+                </template>
+                <p v-else class="chat-no-sources">
+                  未在知识库中找到与问题相关的文档内容，AI 回答可能不准确。
+                </p>
               </div>
             </div>
+            <p class="chat-timestamp">{{ formatTime(msg.timestamp) }}</p>
           </div>
         </div>
       </template>
@@ -222,7 +279,16 @@ onMounted(async () => {
                 <span class="chat-source-card__file">{{ source.filename }}</span>
                 <span class="chat-source-card__score">{{ formatScore(source.score) }}</span>
               </div>
-              <p class="chat-source-card__preview">{{ formatSource(source) }}</p>
+              <p class="chat-source-card__preview">
+                {{ expandedKeys.has(`loading-${si}`) ? source.content : formatSource(source) }}
+              </p>
+              <button
+                v-if="source.content.length > 120"
+                class="chat-source-card__expand"
+                @click="toggleSource(`loading-${si}`)"
+              >
+                {{ expandedKeys.has(`loading-${si}`) ? '收起' : '展开完整内容' }}
+              </button>
             </div>
           </div>
         </div>
@@ -306,11 +372,31 @@ onMounted(async () => {
 }
 
 .chat-bubble {
-  max-width: 75%;
   padding: 12px 16px;
   border-radius: 16px;
   line-height: 1.6;
   font-size: 14px;
+}
+
+.chat-msg__body {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+}
+
+.chat-msg__body--user {
+  align-items: flex-end;
+}
+
+.chat-msg__body--assistant {
+  align-items: flex-start;
+}
+
+.chat-timestamp {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 4px 8px 0;
+  flex-shrink: 0;
 }
 
 .chat-bubble--user {
@@ -456,9 +542,45 @@ onMounted(async () => {
   margin: 0;
   line-height: 1.5;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.chat-source-card__expand {
+  background: none;
+  border: none;
+  padding: 4px 0 0;
+  font-size: 12px;
+  color: #2563eb;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chat-source-card__expand:hover {
+  text-decoration: underline;
+}
+
+.chat-no-sources {
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 0;
+  font-style: italic;
+}
+
+.chat-empty-alert {
+  text-align: center;
+  padding: 24px 16px;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.chat-empty-alert__link {
+  color: #2563eb;
+  text-decoration: underline;
 }
 
 .chat-loading {
