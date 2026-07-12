@@ -4,13 +4,12 @@ import { useRoute } from 'vue-router';
 import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import type { UploadInstance, UploadRawFile } from 'element-plus';
+import type { UploadRawFile } from 'element-plus';
 import { getUploadUrl, getUploadHeaders } from '../api/knowledge-bases';
 
 const route = useRoute();
 const router = useRouter();
 
-const uploadRef = ref<UploadInstance>();
 const loading = ref(false);
 
 const knowledgeBaseId = route.params.id;

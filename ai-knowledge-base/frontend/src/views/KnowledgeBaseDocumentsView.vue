@@ -8,8 +8,11 @@ import {
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
   searchKnowledgeBaseDocuments,
+  processDocument,
+  getDocumentContent,
   type KnowledgeBaseDocumentItem,
   type SearchDocumentItem,
+  type DocumentContentItem,
 } from '../api/knowledge-bases';
 
 const route = useRoute();
@@ -29,6 +32,13 @@ const searchPage = ref(1);
 const searchPageSize = ref(10);
 const searchLoading = ref(false);
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const processLoadingId = ref<number | null>(null);
+let processPollTimer: ReturnType<typeof setInterval> | null = null;
+
+const contentDialogVisible = ref(false);
+const contentDialogLoading = ref(false);
+const contentItem = ref<DocumentContentItem | null>(null);
 
 const goBack = () => {
   router.push('/knowledge-bases');
@@ -118,8 +128,65 @@ const onSearchPageChange = (page: number) => {
 
 const statusTagType = (status: string) => {
   if (status === '已完成') return 'success';
-  if (status === '解析中') return 'warning';
+  if (status === '处理中') return 'warning';
+  if (status === '处理失败') return 'danger';
   return 'info';
+};
+
+const startProcessPoll = () => {
+  if (processPollTimer) clearInterval(processPollTimer);
+  processPollTimer = setInterval(async () => {
+    await fetchDocuments(statusFilter.value || undefined);
+    const hasProcessing = documents.value.some((d) => d.status === '处理中');
+    if (!hasProcessing) {
+      if (processPollTimer) {
+        clearInterval(processPollTimer);
+        processPollTimer = null;
+      }
+      processLoadingId.value = null;
+    }
+  }, 2000);
+};
+
+const handleProcess = async (docId: number) => {
+  processLoadingId.value = docId;
+  try {
+    const result = await processDocument(docId);
+    if (result.code !== 0) {
+      ElMessage.error(result.message || '处理失败');
+      processLoadingId.value = null;
+      return;
+    }
+    ElMessage.success('处理完成');
+    await fetchDocuments(statusFilter.value || undefined);
+    if (documents.value.some((d) => d.status === '处理中')) {
+      startProcessPoll();
+    } else {
+      processLoadingId.value = null;
+    }
+  } catch {
+    ElMessage.error('处理请求失败');
+    processLoadingId.value = null;
+  }
+};
+
+const handleViewContent = async (docId: number) => {
+  contentDialogLoading.value = true;
+  contentDialogVisible.value = true;
+  try {
+    const result = await getDocumentContent(String(knowledgeBaseId), docId);
+    if (result.code === 0 && result.data) {
+      contentItem.value = result.data;
+    } else {
+      contentItem.value = null;
+      ElMessage.error(result.message || '获取内容失败');
+    }
+  } catch {
+    contentItem.value = null;
+    ElMessage.error('获取内容失败');
+  } finally {
+    contentDialogLoading.value = false;
+  }
 };
 
 onMounted(async () => {
@@ -132,6 +199,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (debounceTimer) clearTimeout(debounceTimer);
+  if (processPollTimer) clearInterval(processPollTimer);
 });
 </script>
 
@@ -170,8 +238,9 @@ onUnmounted(() => {
       >
         <el-option label="全部" value="" />
         <el-option label="已完成" value="completed" />
-        <el-option label="解析中" value="parsing" />
+        <el-option label="处理中" value="processing" />
         <el-option label="待处理" value="pending" />
+        <el-option label="处理失败" value="failed" />
       </el-select>
       <el-button type="primary" @click="goToUpload">去上传文档</el-button>
     </div>
@@ -227,18 +296,51 @@ onUnmounted(() => {
           </template>
         </el-table-column>
         <el-table-column prop="updated_at" label="更新时间" width="180" />
-        <el-table-column label="操作" width="150">
-          <template #default>
-            <el-button size="small">查看</el-button>
-            <el-button size="small">重试</el-button>
+        <el-table-column label="操作" width="180">
+          <template #default="{ row }">
+            <el-button size="small" @click="handleViewContent(row.id)">查看</el-button>
+            <el-button
+              size="small"
+              type="primary"
+              :loading="processLoadingId === row.id"
+              :disabled="processLoadingId === row.id"
+              @click="handleProcess(row.id)"
+            >
+              {{ processLoadingId === row.id ? '处理中' : '处理' }}
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
     </template>
+    <el-dialog
+      v-model="contentDialogVisible"
+      :title="contentItem?.name || '文档内容'"
+      width="700px"
+      top="5vh"
+    >
+      <div v-loading="contentDialogLoading" class="content-preview">
+        <pre v-if="contentItem?.content" class="content-text">{{ contentItem.content }}</pre>
+        <el-empty v-else description="暂无内容" />
+      </div>
+    </el-dialog>
   </section>
 </template>
 
 <style scoped>
+.content-preview {
+  min-height: 200px;
+}
+
+.content-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
 .snippet-text :deep(mark) {
   background-color: #ffd43b;
   color: #1a1a2e;

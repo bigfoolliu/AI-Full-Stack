@@ -271,12 +271,12 @@ uploaded → processing → completed
 
 ### 任务清单
 
-- [ ] 增加 `GET /api/knowledge-bases/{id}/documents` 接口
-- [ ] 前端知识库详情页展示文档列表
-- [ ] 列表显示字段：文件名、上传时间、解析状态、操作
-- [ ] 状态以标签形式展示（待处理 / 处理中 / 已完成 / 失败）
-- [ ] 增加"触发解析"按钮（调用 `POST /documents/{id}/process`）
-- [ ] 增加简单的检索测试页面或输入框（可选）
+- [x] 增加 `GET /api/knowledge-bases/{id}/documents` 接口
+- [x] 前端知识库详情页展示文档列表
+- [x] 列表显示字段：文件名、上传时间、解析状态、操作
+- [x] 状态以标签形式展示（待处理 / 处理中 / 已完成 / 失败）
+- [x] 增加"触发解析"按钮（调用 `POST /documents/{id}/process`）
+- [x] 增加简单的检索测试页面或输入框（可选）
 
 ### 状态标签配色建议
 

@@ -92,6 +92,26 @@ export const searchKnowledgeBaseDocuments = async (
   return response.data;
 };
 
+export interface DocumentContentItem {
+  id: number;
+  name: string;
+  status: string;
+  content: string;
+  created_at: string;
+}
+
+export const processDocument = async (id: number) => {
+  const response = await http.post<ApiResponse<any>>(`/api/documents/${id}/process`);
+  return response.data;
+};
+
+export const getDocumentContent = async (kbId: string | number, docId: number) => {
+  const response = await http.get<ApiResponse<DocumentContentItem>>(
+    `/api/knowledge-bases/${kbId}/documents/${docId}/content`
+  );
+  return response.data;
+};
+
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
   `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
 
