@@ -97,7 +97,7 @@
 
 ---
 
-## Day 2：Chunk 切分
+## Day 2：Chunk 切分 ✅
 
 ### 目标
 
@@ -105,15 +105,15 @@
 
 ### 任务清单
 
-- [ ] 创建 `app/services/chunk_service.py`
-- [ ] 实现固定长度切分（`chunk_size=512`, `overlap=64`）
-- [ ] 实现递归切分（按段落 → 按句子 → 按固定长度回退）
-- [ ] 每个 Chunk 记录以下元数据：
+- [x] 创建 `app/services/chunk_service.py`
+- [x] 实现固定长度切分（`chunk_size=512`, `overlap=64`）
+- [x] 实现递归切分（按段落 → 按句子 → 按固定长度回退）
+- [x] 每个 Chunk 记录以下元数据：
   - `doc_id`
   - `kb_id`
   - `chunk_index`
   - `page_number`（如果是 PDF）
-- [ ] 编写单元测试验证切分结果
+- [x] 编写单元测试验证切分结果（`scripts/test_chunk.py`，10 个测试全部通过）
 
 ### Chunk 格式示例
 
