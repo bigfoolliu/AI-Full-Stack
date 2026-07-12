@@ -1,0 +1,73 @@
+from openai import OpenAI
+
+from app.core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL
+
+
+class LlmService:
+    def __init__(self):
+        self.model = LLM_MODEL
+        self.client = (
+            OpenAI(
+                api_key=LLM_API_KEY,
+                base_url=LLM_BASE_URL,
+            )
+            if LLM_API_KEY
+            else None
+        )
+
+    def chat(
+        self,
+        query: str,
+        context_chunks: list[dict],
+        history: list[dict] | None = None,
+    ) -> dict:
+        if not self.client:
+            return {
+                "answer": "LLM API Key 未配置，无法回答问题。请设置 LLM_API_KEY 或 DASHSCOPE_API_KEY。",
+                "sources": context_chunks,
+            }
+
+        system_prompt = self._build_system_prompt(context_chunks)
+        messages = [{"role": "system", "content": system_prompt}]
+
+        if history:
+            for msg in history:
+                if msg.get("role") in ("user", "assistant"):
+                    messages.append(msg)
+
+        messages.append({"role": "user", "content": query})
+
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=0.7,
+            max_tokens=2048,
+        )
+
+        answer = response.choices[0].message.content or ""
+
+        return {
+            "answer": answer,
+            "sources": context_chunks,
+        }
+
+    @staticmethod
+    def _build_system_prompt(context_chunks: list[dict]) -> str:
+        if not context_chunks:
+            return "你是一个知识库问答助手。当前知识库中没有检索到与问题相关的内容，请如实告知用户，不要编造信息。"
+
+        context_lines = []
+        for i, chunk in enumerate(context_chunks, 1):
+            source = chunk.get("filename", "未知文档")
+            content = chunk.get("content", "")
+            context_lines.append(f"[{i}] 来源：{source}\n{content}")
+
+        context_str = "\n\n".join(context_lines)
+
+        return (
+            "你是一个知识库问答助手。\n"
+            "请基于以下检索到的文档内容回答用户的问题。\n"
+            "如果文档内容不足以回答，请如实告知，不要编造。\n\n"
+            "检索到的相关内容：\n"
+            f"{context_str}\n"
+        )

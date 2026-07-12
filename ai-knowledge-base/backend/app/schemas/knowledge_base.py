@@ -14,6 +14,12 @@ class CreateKnowledgeBaseRequest(BaseModel):
     description: str
 
 
+class ChatRequest(BaseModel):
+    query: str
+    history: list[dict] | None = None
+    top_k: int = 5
+
+
 class SemanticSearchRequest(BaseModel):
     query: str
     top_k: int = 5

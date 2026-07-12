@@ -14,10 +14,12 @@ from app.core.security import get_current_user, get_db
 from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import (
+    ChatRequest,
     CreateKnowledgeBaseRequest,
     KnowledgeBaseItem,
     SemanticSearchRequest,
 )
+from app.services.llm_service import LlmService
 from app.services.process_service import process_document
 from app.services.search_service import search_documents
 from app.services.vector_service import VectorService
@@ -365,6 +367,38 @@ def search_knowledge_base_semantic(
     results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
 
     return ApiResponse(code=0, message="ok", data=results)
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/chat", response_model=ApiResponse)
+def chat_with_knowledge_base(
+    knowledge_base_id: int,
+    req: ChatRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    context_chunks = []
+    if EMBEDDING_API_KEY:
+        svc = VectorService()
+        try:
+            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+        except RuntimeError:
+            pass
+
+    llm = LlmService()
+    result = llm.chat(query=req.query, context_chunks=context_chunks, history=req.history)
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "answer": result["answer"],
+            "sources": result["sources"],
+        },
+    )
 
 
 def _status_label(status: str) -> str:
