@@ -1,43 +1,41 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import type { FormInstance, FormRules } from "element-plus";
-import { createKnowledgeBase } from "../api/knowledge-bases";
+import { reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import type { FormInstance, FormRules } from 'element-plus';
+import { createKnowledgeBase } from '../api/knowledge-bases';
 
 const router = useRouter();
 
 const formRef = ref<FormInstance>();
 
 const form = reactive({
-  name: "",
-  description: "",
+  name: '',
+  description: '',
 });
 
 const rules: FormRules = {
   name: [
-    { required: true, message: "知识库名称不能为空", trigger: "blur" },
-    { min: 1, max: 50, message: "名称长度为 1-50 个字符", trigger: "blur" },
+    { required: true, message: '知识库名称不能为空', trigger: 'blur' },
+    { min: 1, max: 50, message: '名称长度为 1-50 个字符', trigger: 'blur' },
     {
       validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
         if (value && !value.trim()) {
-          callback(new Error("名称不能只包含空格"));
+          callback(new Error('名称不能只包含空格'));
         } else {
           callback();
         }
       },
-      trigger: "blur",
+      trigger: 'blur',
     },
   ],
-  description: [
-    { max: 200, message: "描述不超过 200 个字符", trigger: "blur" },
-  ],
+  description: [{ max: 200, message: '描述不超过 200 个字符', trigger: 'blur' }],
 };
 
 const loading = ref(false);
 
 const goBack = () => {
-  router.push("/knowledge-bases");
+  router.push('/knowledge-bases');
 };
 
 const handleSubmit = async () => {
@@ -55,14 +53,14 @@ const handleSubmit = async () => {
     });
 
     if (result.code !== 0 || !result.data) {
-      ElMessage.error(result.message || "创建知识库失败");
+      ElMessage.error(result.message || '创建知识库失败');
       return;
     }
 
     ElMessage.success(`知识库“${result.data.name}”创建成功`);
     router.push(`/knowledge-bases/${result.data.id}/documents`);
   } catch {
-    ElMessage.error("创建知识库请求失败，请稍后重试");
+    ElMessage.error('创建知识库请求失败，请稍后重试');
   } finally {
     loading.value = false;
   }
@@ -96,7 +94,7 @@ const handleSubmit = async () => {
       <div class="kb-form-actions">
         <el-button @click="goBack">返回列表</el-button>
         <el-button type="primary" :loading="loading" @click="handleSubmit">
-          {{ loading ? "创建中..." : "创建知识库" }}
+          {{ loading ? '创建中...' : '创建知识库' }}
         </el-button>
       </div>
     </el-card>

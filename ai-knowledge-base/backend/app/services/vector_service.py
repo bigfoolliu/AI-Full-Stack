@@ -19,10 +19,14 @@ class VectorService:
         self.embedding_dimension = EMBEDDING_DIMENSION
 
         self.qdrant = QdrantClient(url=QDRANT_URL)
-        self.client = OpenAI(
-            api_key=EMBEDDING_API_KEY,
-            base_url=EMBEDDING_BASE_URL,
-        ) if EMBEDDING_API_KEY else None
+        self.client = (
+            OpenAI(
+                api_key=EMBEDDING_API_KEY,
+                base_url=EMBEDDING_BASE_URL,
+            )
+            if EMBEDDING_API_KEY
+            else None
+        )
 
         self._ensure_collection()
 
@@ -40,9 +44,7 @@ class VectorService:
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not self.client:
-            raise RuntimeError(
-                "DASHSCOPE_API_KEY 未设置，无法生成 Embedding"
-            )
+            raise RuntimeError("DASHSCOPE_API_KEY 未设置，无法生成 Embedding")
         response = self.client.embeddings.create(
             model=self.embedding_model,
             input=texts,

@@ -1,5 +1,3 @@
-import os
-
 import fitz
 from docx import Document as DocxDocument
 

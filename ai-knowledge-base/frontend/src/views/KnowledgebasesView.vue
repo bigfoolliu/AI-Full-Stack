@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { Search } from "@element-plus/icons-vue";
-import {
-  getKnowledgeBases,
-  type KnowledgeBaseItem,
-} from "../api/knowledge-bases";
+import { onMounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
+import { getKnowledgeBases, type KnowledgeBaseItem } from '../api/knowledge-bases';
 
 const router = useRouter();
 const knowledgeBases = ref<KnowledgeBaseItem[]>([]);
@@ -14,7 +11,7 @@ const loading = ref(true);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
-const keyword = ref("");
+const keyword = ref('');
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -25,11 +22,11 @@ const fetchKnowledgeBases = async () => {
     const result = await getKnowledgeBases(
       currentPage.value,
       pageSize.value,
-      keyword.value || undefined
+      keyword.value || undefined,
     );
 
     if (result.code !== 0 || !result.data) {
-      ElMessage.error(result.message || "获取知识库列表失败");
+      ElMessage.error(result.message || '获取知识库列表失败');
       knowledgeBases.value = [];
       return;
     }
@@ -37,7 +34,7 @@ const fetchKnowledgeBases = async () => {
     knowledgeBases.value = result.data.items;
     total.value = result.data.total;
   } catch {
-    ElMessage.error("请求知识库列表失败，请稍后重试");
+    ElMessage.error('请求知识库列表失败，请稍后重试');
     knowledgeBases.value = [];
   } finally {
     loading.value = false;
@@ -53,7 +50,7 @@ const onSearchInput = () => {
 };
 
 const onSearchClear = () => {
-  if (keyword.value !== "") return;
+  if (keyword.value !== '') return;
   currentPage.value = 1;
   void fetchKnowledgeBases();
 };
@@ -63,7 +60,7 @@ onMounted(() => {
 });
 
 const goToCreate = () => {
-  router.push("/knowledge-bases/create");
+  router.push('/knowledge-bases/create');
 };
 
 const goToDocuments = (id: number) => {
@@ -90,14 +87,25 @@ const onPageChange = (page: number) => {
     </header>
 
     <div class="kb-toolbar">
-      <el-input v-model="keyword" class="kb-search" placeholder="搜索知识库名称或描述" clearable :prefix-icon="Search"
-        @input="onSearchInput" @clear="onSearchClear" />
-      <el-button type="primary" @click="goToCreate">
-        新建知识库
-      </el-button>
+      <el-input
+        v-model="keyword"
+        class="kb-search"
+        placeholder="搜索知识库名称或描述"
+        clearable
+        :prefix-icon="Search"
+        @input="onSearchInput"
+        @clear="onSearchClear"
+      />
+      <el-button type="primary" @click="goToCreate"> 新建知识库 </el-button>
     </div>
 
-    <el-table v-loading="loading" :data="knowledgeBases" style="width: 100%" empty-text="还没有知识库，先创建一个吧" stripe>
+    <el-table
+      v-loading="loading"
+      :data="knowledgeBases"
+      style="width: 100%"
+      empty-text="还没有知识库，先创建一个吧"
+      stripe
+    >
       <el-table-column label="名称" min-width="180">
         <template #default="{ row }">
           <div class="kb-name-cell">
@@ -117,10 +125,16 @@ const onPageChange = (page: number) => {
       </el-table-column>
     </el-table>
 
-    <div style="display: flex; justify-content: center; margin-top: 16px;">
-      <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :total="total"
-        :page-sizes="[5, 10, 20]" layout="total, sizes, prev, pager, next" @current-change="onPageChange"
-        @size-change="onPageChange" />
+    <div style="display: flex; justify-content: center; margin-top: 16px">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :total="total"
+        :page-sizes="[5, 10, 20]"
+        layout="total, sizes, prev, pager, next"
+        @current-change="onPageChange"
+        @size-change="onPageChange"
+      />
     </div>
   </section>
 </template>

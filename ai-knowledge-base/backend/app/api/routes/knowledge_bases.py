@@ -6,17 +6,16 @@ import os
 import time
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from sqlalchemy.orm import Session
-
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.core.config import UPLOAD_DIR
 from app.core.security import get_current_user, get_db
 from app.models import Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import CreateKnowledgeBaseRequest, KnowledgeBaseItem
-from app.services.document_parser import parse_document
-from app.services.search_service import create_fts_index, search_documents
+from app.services.process_service import process_document
+from app.services.search_service import search_documents
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
 
@@ -37,23 +36,12 @@ def get_knowledge_bases(
 
     if keyword:
         kw = f"%{keyword}%"
-        query = query.filter(
-            KnowledgeBase.name.ilike(kw) | KnowledgeBase.description.ilike(kw)
-        )
+        query = query.filter(KnowledgeBase.name.ilike(kw) | KnowledgeBase.description.ilike(kw))
 
     total = query.count()
-    items = (
-        query.order_by(KnowledgeBase.id.desc())
-        .offset((page - 1) * page_size)
-        .limit(page_size)
-        .all()
-    )
+    items = query.order_by(KnowledgeBase.id.desc()).offset((page - 1) * page_size).limit(page_size).all()
 
-    counts = (
-        db.query(Document.knowledge_base_id, func.count(Document.id))
-        .group_by(Document.knowledge_base_id)
-        .all()
-    )
+    counts = db.query(Document.knowledge_base_id, func.count(Document.id)).group_by(Document.knowledge_base_id).all()
     doc_counts = {kb_id: count for kb_id, count in counts}
 
     result = [
@@ -121,11 +109,7 @@ def get_knowledge_base_detail(
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
 
-    doc_count = (
-        db.query(Document)
-        .filter(Document.knowledge_base_id == knowledge_base_id)
-        .count()
-    )
+    doc_count = db.query(Document).filter(Document.knowledge_base_id == knowledge_base_id).count()
 
     return ApiResponse(
         code=0,
@@ -140,9 +124,7 @@ def get_knowledge_base_detail(
     )
 
 
-@router.get(
-    "/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse
-)
+@router.get("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
 def get_knowledge_base_documents(
     knowledge_base_id: int,
     status: str | None = Query(default=None),
@@ -178,9 +160,7 @@ def get_knowledge_base_documents(
     )
 
 
-@router.post(
-    "/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse
-)
+@router.post("/knowledge-bases/{knowledge_base_id}/documents", response_model=ApiResponse)
 async def upload_knowledge_base_document(
     knowledge_base_id: int,
     file: UploadFile = File(...),
@@ -188,7 +168,7 @@ async def upload_knowledge_base_document(
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
     """
-    上传文档的时候开始解析文档
+    上传文件，保存后 status = pending，后续通过 process 接口触发处理
     """
 
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
@@ -209,26 +189,12 @@ async def upload_knowledge_base_document(
     doc = Document(
         knowledge_base_id=knowledge_base_id,
         filename=file.filename,
-        status="parsing",
+        status="pending",
         file_path=f"/uploads/{knowledge_base_id}/{safe_name}",
     )
     db.add(doc)
     db.commit()
     db.refresh(doc)
-
-    ext = (
-        (file.filename or "").rsplit(".", 1)[-1] if "." in (file.filename or "") else ""
-    )
-    try:
-        text = parse_document(file_path, ext)
-        doc.content = text
-        doc.status = "completed"
-        db.commit()
-        create_fts_index(db, doc)
-    except Exception as e:
-        doc.content = str(e)
-        doc.status = "failed"
-        db.commit()
 
     return ApiResponse(
         code=0,
@@ -242,6 +208,42 @@ async def upload_knowledge_base_document(
             "file_path": doc.file_path,
         },
     )
+
+
+@router.post("/documents/{document_id}/process", response_model=ApiResponse)
+def process_knowledge_base_document(
+    document_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """
+    触发文档处理：解析 → 切分 → 向量化 → 入库
+    """
+    try:
+        doc = process_document(document_id, db)
+        return ApiResponse(
+            code=0,
+            message="ok",
+            data={
+                "id": doc.id,
+                "name": doc.filename,
+                "status": _status_label(doc.status),
+                "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            },
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        doc = db.query(Document).filter(Document.id == document_id).first()
+        return ApiResponse(
+            code=1,
+            message="处理失败",
+            data={
+                "id": document_id,
+                "status": _status_label(doc.status if doc else "failed"),
+                "error": str(e),
+            },
+        )
 
 
 @router.get(
@@ -339,8 +341,8 @@ def search_knowledge_base_documents(
 def _status_label(status: str) -> str:
     labels = {
         "pending": "待处理",
-        "parsing": "解析中",
+        "processing": "处理中",
         "completed": "已完成",
-        "failed": "解析失败",
+        "failed": "处理失败",
     }
     return labels.get(status, status)

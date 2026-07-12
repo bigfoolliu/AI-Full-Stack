@@ -3,19 +3,19 @@ const summaryCards = [
   { title: '知识库总数', value: 3 },
   { title: '文档总数', value: 44 },
   { title: '处理中任务', value: 2 },
-]
+];
 
 const recentKnowledgeBases = [
   { name: '产品帮助中心', time: '今天 10:30 更新', status: '内容已同步', statusType: 'success' },
   { name: '面试题知识库', time: '今天 09:12 更新', status: '文档解析中', statusType: 'warning' },
   { name: '项目规范文档', time: '昨天 18:45 更新', status: '等待补充材料', statusType: 'info' },
-]
+];
 
 const todayTasks = [
   '检查"面试题知识库"的解析状态',
   '补充项目规范文档的最新版本',
   '添加搜索/筛选功能的知识库列表验证',
-]
+];
 </script>
 
 <template>
@@ -24,9 +24,7 @@ const todayTasks = [
       <div>
         <p class="dashboard-hero__eyebrow">Workspace Overview</p>
         <h2>欢迎回来，今天继续把 AI 知识库项目往前推进。</h2>
-        <p class="dashboard-hero__description">
-          查看知识库概览和待处理任务。
-        </p>
+        <p class="dashboard-hero__description">查看知识库概览和待处理任务。</p>
       </div>
     </header>
 

@@ -1,0 +1,20 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.0
+    hooks:
+      - id: ruff
+        args: [--fix]
+        types_or: [python, pyi]
+      - id: ruff-format
+        types_or: [python, pyi]
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        types_or: [javascript, jsx, tsx, vue, json, css, scss, yaml]
+        exclude: >
+          (?x)^(
+            ai-knowledge-base/data/ |
+            ai-knowledge-base/frontend/pnpm-lock\.yaml
+          )

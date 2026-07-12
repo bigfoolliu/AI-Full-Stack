@@ -44,8 +44,7 @@ def create_fts_index(db: Session, document: Document) -> None:
     )
     db.execute(
         text(
-            "INSERT INTO document_fts (doc_id, kb_id, filename, content) "
-            "VALUES (:doc_id, :kb_id, :filename, :content)"
+            "INSERT INTO document_fts (doc_id, kb_id, filename, content) VALUES (:doc_id, :kb_id, :filename, :content)"
         ),
         {"doc_id": doc_id, "kb_id": kb_id, "filename": filename, "content": content},
     )
@@ -70,11 +69,14 @@ def search_documents(
     if status:
         status_filter = " AND d.status = :status"
 
-    count_sql = text("""\
+    count_sql = text(
+        """\
 SELECT COUNT(*)
 FROM document_fts f
 JOIN documents d ON d.id = f.doc_id
-WHERE f.document_fts MATCH :q AND f.kb_id = :kb_id""" + status_filter)
+WHERE f.document_fts MATCH :q AND f.kb_id = :kb_id"""
+        + status_filter
+    )
     params = {"q": search_term, "kb_id": kb_id}
     if status:
         params["status"] = status

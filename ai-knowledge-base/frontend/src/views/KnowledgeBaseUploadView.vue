@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import { useRoute } from "vue-router";
-import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { UploadFilled } from "@element-plus/icons-vue";
-import type { UploadInstance, UploadRawFile } from "element-plus";
-import { getUploadUrl, getUploadHeaders } from "../api/knowledge-bases";
+import { ref } from 'vue';
+import { useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { UploadFilled } from '@element-plus/icons-vue';
+import type { UploadInstance, UploadRawFile } from 'element-plus';
+import { getUploadUrl, getUploadHeaders } from '../api/knowledge-bases';
 
 const route = useRoute();
 const router = useRouter();
@@ -24,7 +24,7 @@ const goBack = () => {
 const beforeUpload = (rawFile: UploadRawFile) => {
   const maxSize = 50 * 1024 * 1024;
   if (rawFile.size > maxSize) {
-    ElMessage.error("文件大小不能超过 50MB");
+    ElMessage.error('文件大小不能超过 50MB');
     return false;
   }
   loading.value = true;
@@ -33,13 +33,13 @@ const beforeUpload = (rawFile: UploadRawFile) => {
 
 const onSuccess = () => {
   loading.value = false;
-  ElMessage.success("文件上传成功");
+  ElMessage.success('文件上传成功');
   router.push(`/knowledge-bases/${knowledgeBaseId}/documents`);
 };
 
 const onError = () => {
   loading.value = false;
-  ElMessage.error("上传失败，请重试");
+  ElMessage.error('上传失败，请重试');
 };
 </script>
 
@@ -65,11 +65,9 @@ const onError = () => {
         <el-icon class="el-icon--upload" :size="40">
           <UploadFilled />
         </el-icon>
-        <div class="el-upload__text">
-          将文件拖拽到此处，或 <em>点击选择文件</em>
-        </div>
+        <div class="el-upload__text">将文件拖拽到此处，或 <em>点击选择文件</em></div>
         <template #tip>
-          <div style="color: #909399; font-size: 13px; margin-top: 4px;">
+          <div style="color: #909399; font-size: 13px; margin-top: 4px">
             支持 PDF、Word、TXT 等常见文档格式，单个文件不超过 50MB。
           </div>
         </template>

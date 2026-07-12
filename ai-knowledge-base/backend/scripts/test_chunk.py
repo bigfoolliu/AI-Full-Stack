@@ -1,5 +1,3 @@
-import re
-
 from app.services.chunk_service import chunk_text, recursive_chunk_text
 
 
@@ -35,12 +33,9 @@ def test_overlap_between_chunks():
     for i in range(1, len(result)):
         prev = result[i - 1]["content"]
         curr = result[i]["content"]
-        overlap_actual = len(prev) + len(curr) - len(
-            re.escape(prev + curr) if False else prev + curr
-        )
         has_overlap = prev[-(20):] in curr
         assert has_overlap, f"Chunk {i} 缺少 overlap"
-    print(f"  [PASS] overlap 正确保留在相邻 chunk 之间")
+    print("  [PASS] overlap 正确保留在相邻 chunk 之间")
 
 
 def test_text_not_lost():
@@ -94,11 +89,12 @@ def test_overlap_clamped():
 
 
 def test_chunk_integration_with_parser():
-    from app.services.document_parser import parse_document
-
     import tempfile
     from pathlib import Path
+
     from fpdf import FPDF
+
+    from app.services.document_parser import parse_document
 
     pdf = FPDF()
     pdf.add_page()

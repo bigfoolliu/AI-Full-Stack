@@ -181,15 +181,15 @@ qdrant:
 
 ### 任务清单
 
-- [ ] 创建 `app/services/process_service.py`
-- [ ] 实现 `process_document(document_id)` 统一入口
-- [ ] 处理开始：更新文档状态为 `processing`
-- [ ] 执行解析
-- [ ] 执行 Chunk 切分
-- [ ] 执行向量化与入库
-- [ ] 处理成功：更新文档状态为 `completed`
-- [ ] 处理失败：更新文档状态为 `failed`，记录错误信息
-- [ ] 编写 `POST /api/documents/{id}/process` 接口
+- [x] 创建 `app/services/process_service.py`
+- [x] 实现 `process_document(document_id)` 统一入口
+- [x] 处理开始：更新文档状态为 `processing`
+- [x] 执行解析
+- [x] 执行 Chunk 切分
+- [x] 执行向量化与入库
+- [x] 处理成功：更新文档状态为 `completed`
+- [x] 处理失败：更新文档状态为 `failed`，记录错误信息
+- [x] 编写 `POST /api/documents/{id}/process` 接口
 
 ### 处理状态流转
 

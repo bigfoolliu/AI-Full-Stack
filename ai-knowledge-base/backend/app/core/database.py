@@ -47,9 +47,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS document_fts USING fts5(
             session.add(admin)
             session.flush()
 
-            kb1 = KnowledgeBase(
-                name="员工手册", description="公司内部员工手册与规章制度"
-            )
+            kb1 = KnowledgeBase(name="员工手册", description="公司内部员工手册与规章制度")
             kb2 = KnowledgeBase(name="产品文档", description="产品技术文档与用户手册")
             kb3 = KnowledgeBase(name="项目管理", description="项目流程与最佳实践")
             session.add_all([kb1, kb2, kb3])

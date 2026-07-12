@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { onMounted, ref, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
-import { useRoute } from "vue-router";
-import { ElMessage } from "element-plus";
-import { Search } from "@element-plus/icons-vue";
+import { onMounted, ref, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
 import {
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
   searchKnowledgeBaseDocuments,
   type KnowledgeBaseDocumentItem,
   type SearchDocumentItem,
-} from "../api/knowledge-bases";
+} from '../api/knowledge-bases';
 
 const route = useRoute();
 const router = useRouter();
 
 const knowledgeBaseId = route.params.id;
-const kbName = ref("");
+const kbName = ref('');
 const documents = ref<KnowledgeBaseDocumentItem[]>([]);
 const loading = ref(true);
-const statusFilter = ref("");
+const statusFilter = ref('');
 
-const searchQuery = ref("");
+const searchQuery = ref('');
 const searchMode = ref(false);
 const searchResults = ref<SearchDocumentItem[]>([]);
 const searchTotal = ref(0);
@@ -31,7 +31,7 @@ const searchLoading = ref(false);
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const goBack = () => {
-  router.push("/knowledge-bases");
+  router.push('/knowledge-bases');
 };
 
 const goToUpload = () => {
@@ -42,21 +42,18 @@ const fetchDocuments = async (status?: string) => {
   loading.value = true;
 
   try {
-    const result = await getKnowledgeBaseDocuments(
-      String(knowledgeBaseId),
-      status || undefined
-    );
+    const result = await getKnowledgeBaseDocuments(String(knowledgeBaseId), status || undefined);
 
     if (result.code !== 0 || !result.data) {
       documents.value = [];
-      ElMessage.error(result.message || "获取文档列表失败");
+      ElMessage.error(result.message || '获取文档列表失败');
       return;
     }
 
     documents.value = result.data;
   } catch {
     documents.value = [];
-    ElMessage.error("请求文档列表失败，请稍后重试");
+    ElMessage.error('请求文档列表失败，请稍后重试');
   } finally {
     loading.value = false;
   }
@@ -65,19 +62,16 @@ const fetchDocuments = async (status?: string) => {
 const executeSearch = async () => {
   searchLoading.value = true;
   try {
-    const result = await searchKnowledgeBaseDocuments(
-      String(knowledgeBaseId),
-      {
-        q: searchQuery.value.trim(),
-        status: statusFilter.value || undefined,
-        page: searchPage.value,
-        pageSize: searchPageSize.value,
-      }
-    );
+    const result = await searchKnowledgeBaseDocuments(String(knowledgeBaseId), {
+      q: searchQuery.value.trim(),
+      status: statusFilter.value || undefined,
+      page: searchPage.value,
+      pageSize: searchPageSize.value,
+    });
 
     if (result.code !== 0 || !result.data) {
       searchResults.value = [];
-      ElMessage.error(result.message || "搜索失败");
+      ElMessage.error(result.message || '搜索失败');
       return;
     }
 
@@ -87,7 +81,7 @@ const executeSearch = async () => {
     searchPageSize.value = result.data.page_size;
   } catch {
     searchResults.value = [];
-    ElMessage.error("搜索请求失败，请稍后重试");
+    ElMessage.error('搜索请求失败，请稍后重试');
   } finally {
     searchLoading.value = false;
   }
@@ -123,9 +117,9 @@ const onSearchPageChange = (page: number) => {
 };
 
 const statusTagType = (status: string) => {
-  if (status === "已完成") return "success";
-  if (status === "解析中") return "warning";
-  return "info";
+  if (status === '已完成') return 'success';
+  if (status === '解析中') return 'warning';
+  return 'info';
 };
 
 onMounted(async () => {
@@ -217,7 +211,13 @@ onUnmounted(() => {
     </template>
 
     <template v-else>
-      <el-table v-loading="loading" :data="documents" style="width: 100%" empty-text="当前还没有文档，快去上传一个吧" stripe>
+      <el-table
+        v-loading="loading"
+        :data="documents"
+        style="width: 100%"
+        empty-text="当前还没有文档，快去上传一个吧"
+        stripe
+      >
         <el-table-column prop="name" label="文档名称" min-width="200" />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">

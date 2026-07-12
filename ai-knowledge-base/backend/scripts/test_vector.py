@@ -1,10 +1,9 @@
-import os
 import time
 from pathlib import Path
 
 import httpx
 
-from app.core.config import EMBEDDING_DIMENSION, QDRANT_URL, EMBEDDING_API_KEY
+from app.core.config import EMBEDDING_API_KEY, EMBEDDING_DIMENSION, QDRANT_URL
 from app.services.chunk_service import chunk_text
 from app.services.vector_service import VectorService
 
@@ -83,11 +82,27 @@ def test_search_without_kb_filter():
 
     svc = VectorService(collection_name="test_search_all")
     svc.upsert_chunks(
-        [{"doc_id": 1, "kb_id": 1, "chunk_index": 0, "content": "Python是一种编程语言", "chunk_size": 512}],
+        [
+            {
+                "doc_id": 1,
+                "kb_id": 1,
+                "chunk_index": 0,
+                "content": "Python是一种编程语言",
+                "chunk_size": 512,
+            }
+        ],
         filename="doc1.txt",
     )
     svc.upsert_chunks(
-        [{"doc_id": 2, "kb_id": 2, "chunk_index": 0, "content": "Java也是一种编程语言", "chunk_size": 512}],
+        [
+            {
+                "doc_id": 2,
+                "kb_id": 2,
+                "chunk_index": 0,
+                "content": "Java也是一种编程语言",
+                "chunk_size": 512,
+            }
+        ],
         filename="doc2.txt",
     )
     time.sleep(1)
@@ -111,8 +126,20 @@ def test_delete_chunks():
     svc = VectorService(collection_name="test_delete")
     svc.upsert_chunks(
         [
-            {"doc_id": 10, "kb_id": 1, "chunk_index": 0, "content": "文档10的第一段", "chunk_size": 512},
-            {"doc_id": 10, "kb_id": 1, "chunk_index": 1, "content": "文档10的第二段", "chunk_size": 512},
+            {
+                "doc_id": 10,
+                "kb_id": 1,
+                "chunk_index": 0,
+                "content": "文档10的第一段",
+                "chunk_size": 512,
+            },
+            {
+                "doc_id": 10,
+                "kb_id": 1,
+                "chunk_index": 1,
+                "content": "文档10的第二段",
+                "chunk_size": 512,
+            },
         ],
         filename="doc10.txt",
     )
@@ -134,9 +161,11 @@ def test_upsert_from_parser_and_chunker():
         return
 
     import tempfile
+
     from fpdf import FPDF
-    from app.services.document_parser import parse_document
+
     from app.services.chunk_service import recursive_chunk_text
+    from app.services.document_parser import parse_document
 
     pdf = FPDF()
     pdf.add_page()

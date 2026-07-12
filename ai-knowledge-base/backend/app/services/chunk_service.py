@@ -86,11 +86,7 @@ def recursive_chunk_text(
                 if buffer:
                     chunks.append(_make_chunk(buffer, chunk_size, doc_id, kb_id))
                     buffer = ""
-                chunks.extend(
-                    chunk_text(
-                        sent, chunk_size, overlap, doc_id, kb_id
-                    )
-                )
+                chunks.extend(chunk_text(sent, chunk_size, overlap, doc_id, kb_id))
                 continue
 
             if len(buffer) + len(sent) <= chunk_size:
