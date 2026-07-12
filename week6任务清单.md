@@ -142,17 +142,17 @@
 
 ### 任务清单
 
-- [ ] 创建 `ChatView.vue`（`/knowledge-bases/:id/chat`）
-- [ ] 消息列表组件（用户消息 / AI 消息 / 气泡样式）
-- [ ] 底部输入框 + 发送按钮
-- [ ] `Enter` 发送，`Shift+Enter` 换行
-- [ ] 流式接收 → 逐字渲染（打字机效果）
-- [ ] 安装并接入 markdown-it，AI 回复支持 Markdown 渲染
-- [ ] AI 回答中的引用来源以卡片形式展示在回答下方
-- [ ] 加载中状态（三点闪烁动画）
-- [ ] 错误处理与重试机制
-- [ ] 注册路由 `/knowledge-bases/:id/chat`
-- [ ] 知识库详情页增加"问答"按钮入口
+- [x] 创建 `ChatView.vue`（`/knowledge-bases/:id/chat`）
+- [x] 消息列表组件（用户消息 / AI 消息 / 气泡样式）
+- [x] 底部输入框 + 发送按钮
+- [x] `Enter` 发送，`Shift+Enter` 换行
+- [x] 流式接收 → 逐字渲染（打字机效果）
+- [x] 安装并接入 markdown-it，AI 回复支持 Markdown 渲染
+- [x] AI 回答中的引用来源以卡片形式展示在回答下方
+- [x] 加载中状态（三点闪烁动画）
+- [x] 错误处理与重试机制
+- [x] 注册路由 `/knowledge-bases/:id/chat`
+- [x] 知识库详情页增加"问答"按钮入口
 
 ### 验收标准
 

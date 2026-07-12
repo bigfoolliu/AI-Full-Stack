@@ -26,6 +26,8 @@ const breadcrumbItems = computed((): BreadcrumbItem[] => {
     return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '文档列表' }];
   if (path.startsWith('/knowledge-bases/') && path.endsWith('/upload'))
     return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '上传文档' }];
+  if (path.startsWith('/knowledge-bases/') && path.endsWith('/chat'))
+    return [{ label: '知识库管理', to: '/knowledge-bases' }, { label: '问答' }];
   return [{ label: 'AI 知识库' }];
 });
 

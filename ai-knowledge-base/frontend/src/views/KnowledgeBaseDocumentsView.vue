@@ -48,6 +48,10 @@ const goToUpload = () => {
   router.push(`/knowledge-bases/${knowledgeBaseId}/upload`);
 };
 
+const goToChat = () => {
+  router.push(`/knowledge-bases/${knowledgeBaseId}/chat`);
+};
+
 const fetchDocuments = async (status?: string) => {
   loading.value = true;
 
@@ -242,6 +246,7 @@ onUnmounted(() => {
         <el-option label="待处理" value="pending" />
         <el-option label="处理失败" value="failed" />
       </el-select>
+      <el-button type="success" @click="goToChat">去问答</el-button>
       <el-button type="primary" @click="goToUpload">去上传文档</el-button>
     </div>
 
