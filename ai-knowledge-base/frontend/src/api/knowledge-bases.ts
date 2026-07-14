@@ -119,6 +119,45 @@ export interface ChatStreamCallbacks {
   onError: (error: Error) => void;
 }
 
+export interface ChatSessionMessage {
+  id?: number;
+  role: "user" | "assistant";
+  content: string;
+  created_at?: string;
+}
+
+export interface ChatSessionItem {
+  id: number;
+  knowledge_base_id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+  messages: ChatSessionMessage[];
+}
+
+export interface ChatSessionsResponseData {
+  items: ChatSessionItem[];
+  active_session: ChatSessionItem | null;
+}
+
+export const getChatSessions = async (kbId: string | number) => {
+  const response = await http.get<ApiResponse<ChatSessionsResponseData>>(
+    `/api/knowledge-bases/${kbId}/chat/sessions`
+  );
+  return response.data;
+};
+
+export const saveChatSession = async (
+  kbId: string | number,
+  payload: { session_id?: number | null; messages: ChatSessionMessage[] }
+) => {
+  const response = await http.post<ApiResponse<ChatSessionItem>>(
+    `/api/knowledge-bases/${kbId}/chat/sessions`,
+    payload
+  );
+  return response.data;
+};
+
 export const chatStream = (
   kbId: number,
   payload: { query: string; history?: { role: string; content: string }[]; top_k?: number },

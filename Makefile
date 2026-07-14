@@ -28,10 +28,11 @@ backend-dev:
 	cd $(BACKEND_DIR) && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 backend-test:
-	cd $(BACKEND_DIR) && uv run python scripts/test_parser.py
-	cd $(BACKEND_DIR) && uv run python scripts/test_process.py
-	cd $(BACKEND_DIR) && uv run python scripts/test_semantic_search.py
-	cd $(BACKEND_DIR) && uv run python scripts/test_chat.py
+	cd $(BACKEND_DIR) && env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy uv run python scripts/test_parser.py
+	cd $(BACKEND_DIR) && env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy uv run python scripts/test_process.py
+	cd $(BACKEND_DIR) && env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy uv run python scripts/test_semantic_search.py
+	cd $(BACKEND_DIR) && env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy uv run python scripts/test_chat.py
+	cd $(BACKEND_DIR) && env -u ALL_PROXY -u all_proxy -u HTTP_PROXY -u http_proxy -u HTTPS_PROXY -u https_proxy uv run python scripts/test_sessions.py
 
 qdrant-up:
 	cd $(APP_DIR) && docker-compose up -d

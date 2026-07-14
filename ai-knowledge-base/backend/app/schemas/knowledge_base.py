@@ -20,6 +20,16 @@ class ChatRequest(BaseModel):
     top_k: int = 5
 
 
+class ChatSessionMessagePayload(BaseModel):
+    role: str
+    content: str
+
+
+class SaveChatSessionRequest(BaseModel):
+    session_id: int | None = None
+    messages: list[ChatSessionMessagePayload]
+
+
 class SemanticSearchRequest(BaseModel):
     query: str
     top_k: int = 5

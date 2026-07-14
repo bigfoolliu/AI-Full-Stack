@@ -28,7 +28,8 @@ class VectorService:
             else None
         )
 
-        self._ensure_collection()
+        if self.client:
+            self._ensure_collection()
 
     def _ensure_collection(self):
         collections = self.qdrant.get_collections().collections

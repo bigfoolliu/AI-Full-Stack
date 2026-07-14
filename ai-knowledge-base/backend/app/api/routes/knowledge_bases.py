@@ -12,12 +12,14 @@ from sqlalchemy.orm import Session
 
 from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
 from app.core.security import get_current_user, get_db
-from app.models import Document, KnowledgeBase, User
+from app.models import ChatMessage, ChatSession, Document, KnowledgeBase, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import (
     ChatRequest,
+    ChatSessionMessagePayload,
     CreateKnowledgeBaseRequest,
     KnowledgeBaseItem,
+    SaveChatSessionRequest,
     SemanticSearchRequest,
 )
 from app.services.llm_service import LlmService
@@ -26,6 +28,36 @@ from app.services.search_service import search_documents
 from app.services.vector_service import VectorService
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
+
+
+def _format_datetime(dt) -> str:
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _build_session_title(messages: list[ChatSessionMessagePayload]) -> str:
+    first_user = next((msg.content.strip() for msg in messages if msg.role == "user" and msg.content.strip()), "")
+    if not first_user:
+        return "新对话"
+    return first_user[:40]
+
+
+def _serialize_chat_session(session: ChatSession, messages: list[ChatMessage]) -> dict:
+    return {
+        "id": session.id,
+        "knowledge_base_id": session.knowledge_base_id,
+        "title": session.title,
+        "created_at": _format_datetime(session.created_at),
+        "updated_at": _format_datetime(session.updated_at or session.created_at),
+        "messages": [
+            {
+                "id": message.id,
+                "role": message.role,
+                "content": message.content,
+                "created_at": _format_datetime(message.created_at),
+            }
+            for message in messages
+        ],
+    }
 
 
 @router.get("/knowledge-bases", response_model=ApiResponse)
@@ -58,7 +90,7 @@ def get_knowledge_bases(
             name=kb.name,
             description=kb.description,
             document_count=doc_counts.get(kb.id, 0),
-            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            created_at=_format_datetime(kb.created_at),
         )
         for kb in items
     ]
@@ -98,7 +130,7 @@ def create_knowledge_base(
             name=kb.name,
             description=kb.description,
             document_count=0,
-            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            created_at=_format_datetime(kb.created_at),
         ),
     )
 
@@ -127,7 +159,7 @@ def get_knowledge_base_detail(
             name=kb.name,
             description=kb.description,
             document_count=doc_count,
-            created_at=kb.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            created_at=_format_datetime(kb.created_at),
         ),
     )
 
@@ -161,7 +193,7 @@ def get_knowledge_base_documents(
                 "id": doc.id,
                 "name": doc.filename,
                 "status": _status_label(doc.status),
-                "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "updated_at": _format_datetime(doc.created_at),
             }
             for doc in docs
         ],
@@ -211,7 +243,7 @@ async def upload_knowledge_base_document(
             "id": doc.id,
             "name": file.filename,
             "status": _status_label(doc.status),
-            "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "updated_at": _format_datetime(doc.created_at),
             "file_size": len(content),
             "file_path": doc.file_path,
         },
@@ -236,7 +268,7 @@ def process_knowledge_base_document(
                 "id": doc.id,
                 "name": doc.filename,
                 "status": _status_label(doc.status),
-                "updated_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "updated_at": _format_datetime(doc.created_at),
             },
         )
     except ValueError as e:
@@ -289,7 +321,7 @@ def get_document_content(
             "name": doc.filename,
             "status": _status_label(doc.status),
             "content": content_preview,
-            "created_at": doc.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "created_at": _format_datetime(doc.created_at),
         },
     )
 
@@ -425,6 +457,120 @@ def chat_stream_with_knowledge_base(
     return StreamingResponse(
         llm.chat_stream(query=req.query, context_chunks=context_chunks, history=req.history),
         media_type="text/event-stream",
+    )
+
+
+@router.get("/knowledge-bases/{knowledge_base_id}/chat/sessions", response_model=ApiResponse)
+def get_chat_sessions(
+    knowledge_base_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    sessions = (
+        db.query(ChatSession)
+        .filter(ChatSession.knowledge_base_id == knowledge_base_id)
+        .order_by(ChatSession.updated_at.desc(), ChatSession.id.desc())
+        .all()
+    )
+    session_ids = [session.id for session in sessions]
+    message_map: dict[int, list[ChatMessage]] = {session_id: [] for session_id in session_ids}
+    if session_ids:
+        all_messages = (
+            db.query(ChatMessage).filter(ChatMessage.session_id.in_(session_ids)).order_by(ChatMessage.id.asc()).all()
+        )
+        for message in all_messages:
+            message_map.setdefault(message.session_id, []).append(message)
+
+    active_session = None
+    if sessions:
+        latest = sessions[0]
+        active_session = _serialize_chat_session(latest, message_map.get(latest.id, []))
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "items": [
+                {
+                    "id": session.id,
+                    "knowledge_base_id": session.knowledge_base_id,
+                    "title": session.title,
+                    "created_at": _format_datetime(session.created_at),
+                    "updated_at": _format_datetime(session.updated_at or session.created_at),
+                    "messages": [
+                        {
+                            "id": message.id,
+                            "role": message.role,
+                            "content": message.content,
+                            "created_at": _format_datetime(message.created_at),
+                        }
+                        for message in message_map.get(session.id, [])
+                    ],
+                }
+                for session in sessions
+            ],
+            "active_session": active_session,
+        },
+    )
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/chat/sessions", response_model=ApiResponse)
+def save_chat_session(
+    knowledge_base_id: int,
+    payload: SaveChatSessionRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+    if not payload.messages:
+        raise HTTPException(status_code=400, detail="消息不能为空")
+
+    if payload.session_id is None:
+        session = ChatSession(
+            knowledge_base_id=knowledge_base_id,
+            title=_build_session_title(payload.messages),
+        )
+        db.add(session)
+        db.flush()
+    else:
+        session = (
+            db.query(ChatSession)
+            .filter(
+                ChatSession.id == payload.session_id,
+                ChatSession.knowledge_base_id == knowledge_base_id,
+            )
+            .first()
+        )
+        if not session:
+            raise HTTPException(status_code=404, detail="会话不存在")
+        db.query(ChatMessage).filter(ChatMessage.session_id == session.id).delete()
+        session.title = _build_session_title(payload.messages)
+        session.updated_at = func.now()
+
+    for item in payload.messages:
+        db.add(
+            ChatMessage(
+                session_id=session.id,
+                role=item.role,
+                content=item.content,
+            )
+        )
+
+    db.commit()
+    db.refresh(session)
+
+    messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.id.asc()).all()
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data=_serialize_chat_session(session, messages),
     )
 
 
