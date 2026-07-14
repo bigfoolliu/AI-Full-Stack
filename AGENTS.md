@@ -39,7 +39,7 @@ Name new test scripts by feature, for example `test_search.py` or `test_sessions
 For AI-assisted work, do not claim a change is complete until you have run the relevant verification command:
 
 - frontend-only changes: `make frontend-build`
-- backend-only changes: `make backend-test`
+- backend-only changes: `make backend-lint` and `make backend-test`
 - full-stack changes: `make check`
 
 ## Commit & Pull Request Guidelines
