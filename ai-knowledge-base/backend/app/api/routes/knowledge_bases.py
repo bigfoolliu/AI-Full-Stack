@@ -409,7 +409,10 @@ def search_knowledge_base_semantic(
 
     settings = _get_or_create_settings(knowledge_base_id, db)
     svc = VectorService()
-    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k or settings.top_k)
+    top_k = req.top_k or settings.top_k
+    filename = req.filter.filename if req.filter else None
+
+    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=top_k, filename=filename)
 
     return ApiResponse(code=0, message="ok", data=results)
 
@@ -431,7 +434,22 @@ def chat_with_knowledge_base(
     if EMBEDDING_API_KEY:
         svc = VectorService()
         try:
-            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=settings.top_k)
+            filename = req.filter.filename if req.filter else None
+            if settings.hybrid_search:
+                context_chunks = svc.hybrid_search(
+                    query=req.query,
+                    kb_id=knowledge_base_id,
+                    limit=settings.top_k,
+                    alpha=settings.hybrid_alpha,
+                    filename=filename,
+                )
+            else:
+                context_chunks = svc.search(
+                    query=req.query,
+                    kb_id=knowledge_base_id,
+                    limit=settings.top_k,
+                    filename=filename,
+                )
             context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
         except RuntimeError:
             pass
@@ -474,7 +492,22 @@ def chat_stream_with_knowledge_base(
     if EMBEDDING_API_KEY:
         svc = VectorService()
         try:
-            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=settings.top_k)
+            filename = req.filter.filename if req.filter else None
+            if settings.hybrid_search:
+                context_chunks = svc.hybrid_search(
+                    query=req.query,
+                    kb_id=knowledge_base_id,
+                    limit=settings.top_k,
+                    alpha=settings.hybrid_alpha,
+                    filename=filename,
+                )
+            else:
+                context_chunks = svc.search(
+                    query=req.query,
+                    kb_id=knowledge_base_id,
+                    limit=settings.top_k,
+                    filename=filename,
+                )
             context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
         except RuntimeError:
             pass
@@ -691,6 +724,10 @@ def update_knowledge_base_settings(
         settings.max_tokens = payload.max_tokens
     if payload.model_name is not None:
         settings.model_name = payload.model_name
+    if payload.hybrid_search is not None:
+        settings.hybrid_search = payload.hybrid_search
+    if payload.hybrid_alpha is not None:
+        settings.hybrid_alpha = payload.hybrid_alpha
     db.commit()
     db.refresh(settings)
     return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())

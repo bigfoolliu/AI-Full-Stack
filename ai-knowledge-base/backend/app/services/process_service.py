@@ -34,7 +34,7 @@ def process_document(document_id: int, db: Session) -> Document:
         if EMBEDDING_API_KEY and chunks:
             vector_svc = VectorService()
             vector_svc.delete_document_chunks(doc.id)
-            vector_svc.upsert_chunks(chunks, filename=doc.filename)
+            vector_svc.upsert_chunks(chunks, filename=doc.filename, status=doc.status)
 
         doc.status = "completed"
         db.commit()

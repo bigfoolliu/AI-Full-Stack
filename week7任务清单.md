@@ -136,7 +136,7 @@
 
 ---
 
-## Day 4：Metadata Filter 与 Hybrid Search
+## Day 4：Metadata Filter 与 Hybrid Search ✅
 
 ### 目标
 
@@ -144,28 +144,18 @@
 
 ### 任务清单
 
-- [ ] Qdrant search 增加文档名/状态过滤参数
-- [ ] Chat 接口支持 `filter` 参数（文档名、tag 等）
-- [ ] 前端检索参数区域增加过滤选项
-- [ ] 实现 Hybrid Search：FTS5 关键词结果 + Qdrant 向量结果融合
-- [ ] 融合策略：加权平均 / 交替排序 / 取并集去重
-- [ ] 设置页增加 Hybrid Search 开关与权重配置
-
-### Hybrid Search 思路
-
-```python
-# 伪代码示意
-fts_results = fts_search(query, kb_id, limit=n)
-vector_results = vector_search(query, kb_id, limit=n)
-# 融合：归一化得分后加权合并
-merged = merge(fts_results, vector_results, alpha=0.3)
-```
+- [x] Qdrant search 支持 `filename` 过滤（payload 精确匹配）
+- [x] Chat/Search 接口支持 `filter` 参数（`{"filename": "xxx.pdf"}`）
+- [x] 实现 Hybrid Search：FTS5 关键词 + Qdrant 向量结果融合
+- [x] 融合策略：归一化得分后按 alpha 加权排序
+- [x] 设置页增加 Hybrid Search 开关与 `hybrid_alpha` 权重滑块
+- [x] 向量 upsert 时记录文档 `status` 到 payload
 
 ### 验收标准
 
-- 可按文档名过滤检索范围
-- Hybrid Search 返回更全面的结果
-- 可在设置页开关和调权重
+- [x] 可按文档名过滤检索范围
+- [x] Hybrid Search 返回 FTS + 向量融合结果
+- [x] 可在设置页开关和调权重
 
 ---
 

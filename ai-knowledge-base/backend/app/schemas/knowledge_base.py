@@ -14,10 +14,16 @@ class CreateKnowledgeBaseRequest(BaseModel):
     description: str
 
 
+class SearchFilter(BaseModel):
+    filename: str | None = None
+    status: str | None = None
+
+
 class ChatRequest(BaseModel):
     query: str
     history: list[dict] | None = None
     top_k: int = 5
+    filter: SearchFilter | None = None
 
 
 class ChatSessionMessagePayload(BaseModel):
@@ -33,6 +39,7 @@ class SaveChatSessionRequest(BaseModel):
 class SemanticSearchRequest(BaseModel):
     query: str
     top_k: int = 5
+    filter: SearchFilter | None = None
 
 
 class KnowledgeBaseSettingItem(BaseModel):
@@ -56,3 +63,5 @@ class UpdateKnowledgeBaseSettingRequest(BaseModel):
     temperature: float | None = None
     max_tokens: int | None = None
     model_name: str | None = None
+    hybrid_search: bool | None = None
+    hybrid_alpha: float | None = None

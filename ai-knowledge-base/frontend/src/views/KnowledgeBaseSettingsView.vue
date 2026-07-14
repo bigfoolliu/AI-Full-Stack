@@ -26,6 +26,8 @@ const temperature = ref(0.7);
 const maxTokens = ref(2048);
 const modelName = ref('');
 const models = ref<ModelOption[]>([]);
+const hybridSearch = ref(false);
+const hybridAlpha = ref(0.3);
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个知识库问答助手。
 请基于以下检索到的文档内容回答用户的问题。
@@ -52,6 +54,8 @@ const loadSettings = async () => {
     maxTokens.value = res.data.max_tokens;
     modelName.value = res.data.model_name || '';
     models.value = modelsRes.data;
+    hybridSearch.value = res.data.hybrid_search;
+    hybridAlpha.value = res.data.hybrid_alpha;
   } catch {
     ElMessage.error('加载设置失败');
   } finally {
@@ -69,6 +73,8 @@ const saveSettings = async () => {
       temperature: temperature.value,
       max_tokens: maxTokens.value,
       model_name: modelName.value || null,
+      hybrid_search: hybridSearch.value,
+      hybrid_alpha: hybridAlpha.value,
     });
     ElMessage.success('设置已保存');
   } catch {
@@ -173,6 +179,34 @@ onMounted(loadSettings);
             <el-input-number v-model="maxTokens" :min="256" :max="8192" :step="256" />
           </div>
           <p class="kb-settings-page__hint">单次回答的最大 Token 数。范围 256-8192。</p>
+        </el-form-item>
+
+        <el-divider />
+
+        <h3 class="kb-settings-page__section-title">混合检索</h3>
+
+        <el-form-item label="Hybrid Search">
+          <el-switch v-model="hybridSearch" />
+          <p class="kb-settings-page__hint">
+            开启后同时使用关键词检索（FTS）和语义检索（向量），融合两者结果。
+          </p>
+        </el-form-item>
+
+        <el-form-item label="语义权重（Alpha）" v-if="hybridSearch">
+          <div class="kb-settings-page__slider-row">
+            <el-slider
+              v-model="hybridAlpha"
+              :min="0"
+              :max="1"
+              :step="0.05"
+              show-stops
+              style="width: 300px"
+            />
+            <span class="kb-settings-page__value">{{ hybridAlpha.toFixed(2) }}</span>
+          </div>
+          <p class="kb-settings-page__hint">
+            控制语义搜索结果的权重比例。Alpha = 1 时仅使用语义检索，= 0 时仅使用关键词。
+          </p>
         </el-form-item>
 
         <el-form-item>

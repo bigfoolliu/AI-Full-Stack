@@ -56,6 +56,7 @@ class VectorService:
         self,
         chunks: list[dict],
         filename: str = "",
+        status: str = "completed",
     ) -> int:
         texts = [c["content"] for c in chunks]
         vectors = self.embed_texts(texts)
@@ -75,6 +76,7 @@ class VectorService:
                         "page_number": chunk.get("page_number"),
                         "chunk_size": chunk["chunk_size"],
                         "filename": filename,
+                        "status": status,
                     },
                 )
             )
@@ -90,21 +92,19 @@ class VectorService:
         query: str,
         kb_id: int | None = None,
         limit: int = 10,
+        filename: str | None = None,
     ) -> list[dict]:
         query_vector = self.embed_texts([query])[0]
 
-        qdrant_filter = None
-        if kb_id is not None:
-            from qdrant_client.models import FieldCondition, Filter, MatchValue
+        from qdrant_client.models import FieldCondition, Filter, MatchValue
 
-            qdrant_filter = Filter(
-                must=[
-                    FieldCondition(
-                        key="kb_id",
-                        match=MatchValue(value=kb_id),
-                    )
-                ]
-            )
+        conditions: list[FieldCondition] = []
+        if kb_id is not None:
+            conditions.append(FieldCondition(key="kb_id", match=MatchValue(value=kb_id)))
+        if filename:
+            conditions.append(FieldCondition(key="filename", match=MatchValue(value=filename)))
+
+        qdrant_filter = Filter(must=conditions) if conditions else None
 
         hits = self.qdrant.search(
             collection_name=self.collection_name,
@@ -125,6 +125,95 @@ class VectorService:
             }
             for hit in hits
         ]
+
+    def hybrid_search(
+        self,
+        query: str,
+        kb_id: int,
+        limit: int = 10,
+        alpha: float = 0.3,
+        filename: str | None = None,
+    ) -> list[dict]:
+        from sqlalchemy import text
+
+        from app.core.database import SessionLocal
+
+        vector_results = self.search(query=query, kb_id=kb_id, limit=limit, filename=filename)
+
+        db = SessionLocal()
+        try:
+            fts_limit = limit * 2
+            search_term = " OR ".join(f'"{p}"' for p in query.strip().split())
+            if not search_term:
+                return vector_results
+
+            rows = db.execute(
+                text(
+                    """\
+SELECT f.doc_id, f.filename, f.kb_id, f.content, f.rank
+FROM document_fts f
+WHERE f.document_fts MATCH :q AND f.kb_id = :kb_id
+ORDER BY f.rank
+LIMIT :limit
+"""
+                ),
+                {"q": search_term, "kb_id": kb_id, "limit": fts_limit},
+            ).fetchall()
+
+            fts_results = [
+                {
+                    "doc_id": row.doc_id,
+                    "filename": row.filename,
+                    "kb_id": row.kb_id,
+                    "content": row.content,
+                    "score": row.rank,
+                }
+                for row in rows
+            ]
+        finally:
+            db.close()
+
+        return self._fuse_results(vector_results, fts_results, alpha=alpha, limit=limit)
+
+    @staticmethod
+    def _fuse_results(
+        vector_results: list[dict],
+        fts_results: list[dict],
+        alpha: float = 0.3,
+        limit: int = 10,
+    ) -> list[dict]:
+        doc_id_to_source: dict[int, dict] = {}
+        seen_doc_ids: set[int] = set()
+
+        max_v_score = max((r["score"] for r in vector_results), default=1.0)
+        for r in vector_results:
+            doc_id = r["doc_id"]
+            r["_vector_score"] = r["score"]
+            r["score"] = r["score"] / max_v_score if max_v_score > 0 else 0
+            doc_id_to_source[doc_id] = r
+            seen_doc_ids.add(doc_id)
+
+        max_f_score = max((r["score"] for r in fts_results), default=1.0)
+        for r in fts_results:
+            doc_id = r["doc_id"]
+            r["_fts_score"] = r["score"]
+            norm_fts = r["score"] / max_f_score if max_f_score > 0 else 0
+            if doc_id in seen_doc_ids:
+                existing = doc_id_to_source[doc_id]
+                existing["score"] = alpha * existing["score"] + (1 - alpha) * norm_fts
+                existing["_vector_score"] = existing.get("_vector_score", 0)
+                existing["_fts_score"] = norm_fts
+            else:
+                r["_vector_score"] = 0
+                r["score"] = (1 - alpha) * norm_fts
+                doc_id_to_source[doc_id] = r
+
+        merged = sorted(doc_id_to_source.values(), key=lambda x: x["score"], reverse=True)
+        for r in merged:
+            r.pop("_vector_score", None)
+            r.pop("_fts_score", None)
+
+        return merged[:limit]
 
     def delete_document_chunks(self, doc_id: int):
         from qdrant_client.models import FieldCondition, Filter, MatchValue

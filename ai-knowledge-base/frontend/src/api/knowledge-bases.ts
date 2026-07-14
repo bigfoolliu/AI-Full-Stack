@@ -261,6 +261,8 @@ export interface UpdateKnowledgeBaseSettingPayload {
   temperature?: number;
   max_tokens?: number;
   model_name?: string | null;
+  hybrid_search?: boolean;
+  hybrid_alpha?: number;
 }
 
 export const listModels = async () => {
