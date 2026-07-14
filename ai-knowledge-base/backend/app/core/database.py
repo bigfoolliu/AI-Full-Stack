@@ -17,7 +17,7 @@ class Base(DeclarativeBase):
 
 
 def init_db():
-    from app.models import Base, Document, KnowledgeBase, User
+    from app.models import Base, ChatMessage, ChatSession, Document, KnowledgeBase, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
 

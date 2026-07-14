@@ -188,15 +188,18 @@ def get_knowledge_base_documents(
     return ApiResponse(
         code=0,
         message="ok",
-        data=[
-            {
-                "id": doc.id,
-                "name": doc.filename,
-                "status": _status_label(doc.status),
-                "updated_at": _format_datetime(doc.created_at),
-            }
-            for doc in docs
-        ],
+        data={
+            "items": [
+                {
+                    "id": doc.id,
+                    "name": doc.filename,
+                    "status": _status_label(doc.status),
+                    "updated_at": _format_datetime(doc.created_at),
+                }
+                for doc in docs
+            ],
+            "total": len(docs),
+        },
     )
 
 
@@ -364,7 +367,7 @@ def search_knowledge_base_documents(
                 {
                     "id": item.id,
                     "filename": item.filename,
-                    "kb_id": item.kb_id,
+                    "knowledge_base_id": item.knowledge_base_id,
                     "status": _status_label(item.status),
                     "snippet": item.snippet,
                     "updated_at": item.created_at,

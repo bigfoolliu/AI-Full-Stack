@@ -64,7 +64,7 @@ const fetchDocuments = async (status?: string) => {
       return;
     }
 
-    documents.value = result.data;
+    documents.value = result.data?.items || [];
   } catch {
     documents.value = [];
     ElMessage.error('请求文档列表失败，请稍后重试');

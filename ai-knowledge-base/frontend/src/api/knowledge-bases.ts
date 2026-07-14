@@ -64,10 +64,15 @@ export const getKnowledgeBaseDetail = async (id: string | number) => {
   return response.data;
 };
 
+export interface KnowledgeBaseDocumentsResponse {
+  items: KnowledgeBaseDocumentItem[];
+  total: number;
+}
+
 export const getKnowledgeBaseDocuments = async (id: string | number, status?: string) => {
   const params: Record<string, string> = {};
   if (status) params.status = status;
-  const response = await http.get<ApiResponse<KnowledgeBaseDocumentItem[]>>(
+  const response = await http.get<ApiResponse<KnowledgeBaseDocumentsResponse>>(
     `/api/knowledge-bases/${id}/documents`,
     { params }
   );

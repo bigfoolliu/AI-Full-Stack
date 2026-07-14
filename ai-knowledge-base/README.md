@@ -275,32 +275,53 @@ npm run dev
 
 第 5 周的项目已经从"真实后端系统"推进到 **「RAG 最小闭环」**。
 
-## 下周计划（Week 6）
+## 第 6 周接口清单
 
-### 1. RAG 问答对话
+第 6 周新增以下接口：
 
-- LLM 接入（DashScope / Qwen API）
-- `POST /api/knowledge-bases/{id}/chat` 接口
-- query → 向量检索 → 上下文组装 → LLM 生成回答
-- 流式输出（Server-Sent Events）
+1. `POST /api/knowledge-bases/{id}/chat` — 知识库问答（返回完整回答 + 引用来源）
+2. `POST /api/knowledge-bases/{id}/chat/stream` — 知识库问答（SSE 流式）
+3. `GET /api/knowledge-bases/{id}/chat/sessions` — 会话列表
+4. `POST /api/knowledge-bases/{id}/chat/sessions` — 创建/更新会话
 
-### 2. 对话管理
+## 第 6 周页面清单
 
-- 对话记录与历史存储
-- 上下文管理（将聊天历史注入 prompt）
-- 多轮对话支持
+| 页面 | 路径 | 变更 |
+|------|------|------|
+| Chat 对话页 | `/knowledge-bases/:id/chat` | 新增：完整对话页面 |
+| 知识库详情页 | `/knowledge-bases/:id/documents` | 新增"问答"入口按钮 |
 
-### 3. 前端对话界面
+## 第 6 周完成内容总结
 
-- 类 Chat 对话框组件
-- Markdown 渲染
-- 流式消息展示
-- 历史消息加载
+- **LLM 接入**：集成 DashScope Qwen API（OpenAI 兼容格式），支持 `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` 自定义配置
+- **RAG 问答**：`POST /api/knowledge-bases/{id}/chat` 实现 query → 向量检索 → 上下文组装 → LLM 生成回答的全链路
+- **流式输出（SSE）**：`POST /api/knowledge-bases/{id}/chat/stream` 逐 token 推送 + 引用来源 + 完成标记，前端 `fetch` + `ReadableStream` 逐字渲染
+- **前端 Chat 对话框**：`ChatView.vue` 支持消息收发、Markdown 渲染（markdown-it）、打字机效果、引用来源卡片展示
+- **多轮对话**：前端维护 history 列表，后端 `_build_messages()` 按 token 预算截断早期消息
+- **会话历史管理**：`chat_sessions` + `chat_messages` 数据库表，前端左侧会话列表（新建/切换），刷新后自动恢复 active_session
+- **交互体验**：Enter 发送 / Shift+Enter 换行、重新提问、重试机制、错误提示、空知识库引导
 
-### 4. 性能与体验
+第 6 周的项目已经从 **「RAG 最小闭环」**推进到 **「AI 应用工程：对话与推理阶段」**。
 
+## 下周计划（Week 7）
+
+### 1. 质量与工程化
+
+- 补充后端测试覆盖（单元测试 + 集成测试）
+- 前端错误边界与异常处理完善
+- 前后端类型一致性检查
+
+### 2. 功能迭代
+
+- 会话删除 / 重命名
+- 会话与用户关联
+- 知识库权限基础
+
+### 3. 性能优化
+
+- 文档处理异步化（Celery / 后台任务）
+- 流式响应延迟优化
 - 搜索响应时间优化
-- 前端搜索结果展示优化
 
 ## 当前阶段定位
 

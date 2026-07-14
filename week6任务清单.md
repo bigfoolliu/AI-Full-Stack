@@ -226,13 +226,13 @@ history = [
 
 ### 任务清单
 
-- [ ] 创建 `chat_sessions` 表（id, kb_id, title, created_at, updated_at）
-- [ ] 创建 `chat_messages` 表（id, session_id, role, content, created_at）
-- [ ] Chat 流式接口结束时保存消息到数据库
-- [ ] `GET /api/knowledge-bases/{id}/chat/sessions` — 会话列表
-- [ ] `POST /api/knowledge-bases/{id}/chat/sessions` — 创建/更新会话
-- [ ] 前端左侧会话列表（新建 / 切换 / 标题展示）
-- [ ] 刷新页面后恢复当前会话
+- [x] 创建 `chat_sessions` 表（id, kb_id, title, created_at, updated_at）
+- [x] 创建 `chat_messages` 表（id, session_id, role, content, created_at）
+- [x] Chat 流式接口结束时保存消息到数据库
+- [x] `GET /api/knowledge-bases/{id}/chat/sessions` — 会话列表
+- [x] `POST /api/knowledge-bases/{id}/chat/sessions` — 创建/更新会话
+- [x] 前端左侧会话列表（新建 / 切换 / 标题展示）
+- [x] 刷新页面后恢复当前会话
 
 ### 验收标准
 
@@ -250,12 +250,12 @@ history = [
 
 ### 任务清单
 
-- [ ] 检查所有接口命名和返回格式是否统一
-- [ ] 检查 Chat 页面在不同知识库之间的数据隔离
-- [ ] 补充 `docs/` 下的 LLM 接入与流式输出说明
-- [ ] 更新 README，补充第 6 周新增功能
-- [ ] 验证全链路：上传 → 解析 → 检索 → 问答 → 流式
-- [ ] 记录下周任务清单（Week 7）
+- [x] 检查所有接口命名和返回格式是否统一
+- [x] 检查 Chat 页面在不同知识库之间的数据隔离
+- [x] 补充 `docs/` 下的 LLM 接入与流式输出说明
+- [x] 更新 README，补充第 6 周新增功能
+- [x] 验证全链路：上传 → 解析 → 检索 → 问答 → 流式
+- [x] 记录下周任务清单（Week 7）
 
 ### 验收标准
 

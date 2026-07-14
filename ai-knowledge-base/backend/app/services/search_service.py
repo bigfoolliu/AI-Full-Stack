@@ -10,7 +10,7 @@ from app.models import Document
 class SearchResultItem:
     id: int
     filename: str
-    kb_id: int
+    knowledge_base_id: int
     status: str
     snippet: str
     score: float
@@ -110,7 +110,7 @@ LIMIT :limit OFFSET :offset
         SearchResultItem(
             id=row.doc_id,
             filename=row.filename,
-            kb_id=row.kb_id,
+            knowledge_base_id=row.kb_id,
             status=row.status,
             snippet=row.snippet,
             score=row.rank,

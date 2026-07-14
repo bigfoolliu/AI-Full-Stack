@@ -2,16 +2,27 @@
 
 ## Current Priorities
 
-1. Complete Week 6 Day 6 session persistence:
-   - add `chat_sessions` and `chat_messages`
-   - expose session list/create-update APIs
-   - restore the active chat after refresh
-2. Stabilize the RAG flow:
-   - verify upload -> process -> search -> chat works end to end
-   - tighten error handling around missing model or vector dependencies
-3. Improve AI development readiness:
-   - keep `AGENTS.md`, `Makefile`, and this roadmap aligned
-   - prefer repeatable verification commands over ad hoc local steps
+1. Stabilize the RAG flow (Week 7):
+   - supplement backend test coverage (unit + integration)
+   - improve frontend error boundaries and exception handling
+   - check frontend/backend type consistency
+2. Iterate session features:
+   - session delete / rename
+   - link sessions to users
+   - basic knowledge-base permission model
+3. Performance:
+   - async document processing (Celery / background tasks)
+   - streaming response latency improvements
+   - search response time optimization
+
+## Completed
+
+- Week 6: LLM integration, RAG Q&A, SSE streaming, Chat dialog, session history
+- Week 5: Document processing pipeline, chunking, vector search (Qdrant), FTS5
+- Week 4: Database migration, JWT auth, document parsing, FTS5 full-text search
+- Week 3: Element Plus adoption, search + pagination, real file upload
+- Week 2: Knowledge base CRUD, document list + upload pages
+- Week 1: Login, dashboard, backend skeleton
 
 ## Out of Scope For The Next Iteration
 
