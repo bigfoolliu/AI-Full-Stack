@@ -52,3 +52,4 @@ class KnowledgeBaseSettingItem(BaseModel):
 class UpdateKnowledgeBaseSettingRequest(BaseModel):
     top_k: int | None = None
     similarity_threshold: float | None = None
+    system_prompt: str | None = None

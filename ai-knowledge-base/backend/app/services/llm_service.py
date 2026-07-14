@@ -23,6 +23,7 @@ class LlmService:
         query: str,
         context_chunks: list[dict],
         history: list[dict] | None = None,
+        system_prompt: str | None = None,
     ) -> dict:
         if not self.client:
             return {
@@ -30,7 +31,7 @@ class LlmService:
                 "sources": context_chunks,
             }
 
-        messages = self._build_messages(query, context_chunks, history)
+        messages = self._build_messages(query, context_chunks, history, system_prompt)
 
         response = self.client.chat.completions.create(
             model=self.model,
@@ -51,6 +52,7 @@ class LlmService:
         query: str,
         context_chunks: list[dict],
         history: list[dict] | None = None,
+        system_prompt: str | None = None,
     ) -> Generator[str, None, None]:
         if not self.client:
             yield f"data: {json.dumps({'type': 'token', 'content': 'LLM API Key 未配置，无法回答问题。'})}\n\n"
@@ -58,7 +60,7 @@ class LlmService:
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             return
 
-        messages = self._build_messages(query, context_chunks, history)
+        messages = self._build_messages(query, context_chunks, history, system_prompt)
 
         stream = self.client.chat.completions.create(
             model=self.model,
@@ -76,13 +78,20 @@ class LlmService:
         yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
+    DEFAULT_SYSTEM_PROMPT = (
+        "你是一个知识库问答助手。\n"
+        "请基于以下检索到的文档内容回答用户的问题。\n"
+        "如果文档内容不足以回答，请如实告知，不要编造。"
+    )
+
     def _build_messages(
         self,
         query: str,
         context_chunks: list[dict],
         history: list[dict] | None = None,
+        custom_system_prompt: str | None = None,
     ) -> list[dict]:
-        system_prompt = self._build_system_prompt(context_chunks)
+        system_prompt = self._build_system_prompt(context_chunks, custom_system_prompt)
         messages: list[dict] = []
         chars_budget = MAX_HISTORY_TOKENS * 4
 
@@ -104,9 +113,13 @@ class LlmService:
         return messages
 
     @staticmethod
-    def _build_system_prompt(context_chunks: list[dict]) -> str:
+    def _build_system_prompt(context_chunks: list[dict], custom_prompt: str | None = None) -> str:
+        base_prompt = (custom_prompt or LlmService.DEFAULT_SYSTEM_PROMPT).strip()
+
         if not context_chunks:
-            return "你是一个知识库问答助手。当前知识库中没有检索到与问题相关的内容，请如实告知用户，不要编造信息。"
+            if custom_prompt:
+                return base_prompt + "\n\n当前知识库中没有检索到与问题相关的内容，请如实告知用户，不要编造信息。"
+            return base_prompt
 
         context_lines = []
         for i, chunk in enumerate(context_chunks, 1):
@@ -116,10 +129,4 @@ class LlmService:
 
         context_str = "\n\n".join(context_lines)
 
-        return (
-            "你是一个知识库问答助手。\n"
-            "请基于以下检索到的文档内容回答用户的问题。\n"
-            "如果文档内容不足以回答，请如实告知，不要编造。\n\n"
-            "检索到的相关内容：\n"
-            f"{context_str}\n"
-        )
+        return f"{base_prompt}\n\n检索到的相关内容：\n{context_str}\n"

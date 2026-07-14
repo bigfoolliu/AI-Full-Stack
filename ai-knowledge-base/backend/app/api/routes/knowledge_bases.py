@@ -437,7 +437,12 @@ def chat_with_knowledge_base(
             pass
 
     llm = LlmService()
-    result = llm.chat(query=req.query, context_chunks=context_chunks, history=req.history)
+    result = llm.chat(
+        query=req.query,
+        context_chunks=context_chunks,
+        history=req.history,
+        system_prompt=settings.system_prompt,
+    )
 
     return ApiResponse(
         code=0,
@@ -473,7 +478,12 @@ def chat_stream_with_knowledge_base(
 
     llm = LlmService()
     return StreamingResponse(
-        llm.chat_stream(query=req.query, context_chunks=context_chunks, history=req.history),
+        llm.chat_stream(
+            query=req.query,
+            context_chunks=context_chunks,
+            history=req.history,
+            system_prompt=settings.system_prompt,
+        ),
         media_type="text/event-stream",
     )
 
@@ -649,6 +659,8 @@ def update_knowledge_base_settings(
         settings.top_k = payload.top_k
     if payload.similarity_threshold is not None:
         settings.similarity_threshold = payload.similarity_threshold
+    if payload.system_prompt is not None:
+        settings.system_prompt = payload.system_prompt
     db.commit()
     db.refresh(settings)
     return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())

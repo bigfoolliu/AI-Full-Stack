@@ -252,6 +252,7 @@ export interface KnowledgeBaseSettingItem {
 export interface UpdateKnowledgeBaseSettingPayload {
   top_k?: number;
   similarity_threshold?: number;
+  system_prompt?: string | null;
 }
 
 export const getKnowledgeBaseSettings = async (id: string | number) => {

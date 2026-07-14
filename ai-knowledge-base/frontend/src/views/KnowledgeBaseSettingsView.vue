@@ -19,6 +19,11 @@ const saving = ref(false);
 
 const topK = ref(5);
 const similarityThreshold = ref(0.0);
+const systemPrompt = ref('');
+
+const DEFAULT_SYSTEM_PROMPT = `你是一个知识库问答助手。
+请基于以下检索到的文档内容回答用户的问题。
+如果文档内容不足以回答，请如实告知，不要编造。`;
 
 const goBack = () => {
   router.push(`/knowledge-bases/${knowledgeBaseId}/documents`);
@@ -33,6 +38,7 @@ const loadSettings = async () => {
     const res = await getKnowledgeBaseSettings(String(knowledgeBaseId));
     topK.value = res.data.top_k;
     similarityThreshold.value = res.data.similarity_threshold;
+    systemPrompt.value = res.data.system_prompt || '';
   } catch {
     ElMessage.error('加载设置失败');
   } finally {
@@ -46,6 +52,7 @@ const saveSettings = async () => {
     await updateKnowledgeBaseSettings(String(knowledgeBaseId), {
       top_k: topK.value,
       similarity_threshold: similarityThreshold.value,
+      system_prompt: systemPrompt.value || null,
     });
     ElMessage.success('设置已保存');
   } catch {
@@ -102,6 +109,23 @@ onMounted(loadSettings);
           </p>
         </el-form-item>
 
+        <el-form-item label="系统指令（System Prompt）">
+          <el-input
+            v-model="systemPrompt"
+            type="textarea"
+            :rows="8"
+            placeholder="自定义系统指令，留空将使用默认 Prompt"
+          />
+          <div class="kb-settings-page__prompt-footer">
+            <p class="kb-settings-page__hint">
+              设置 AI 助手的角色和行为。当产生上下文时，检索到的内容会自动追加到指令末尾。
+            </p>
+            <el-button text size="small" @click="systemPrompt = DEFAULT_SYSTEM_PROMPT">
+              恢复默认
+            </el-button>
+          </div>
+        </el-form-item>
+
         <el-form-item>
           <el-button type="primary" :loading="saving" @click="saveSettings">
             {{ saving ? '保存中...' : '保存设置' }}
@@ -155,5 +179,11 @@ onMounted(loadSettings);
   font-size: 12px;
   margin: 4px 0 0;
   line-height: 1.5;
+}
+
+.kb-settings-page__prompt-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
 }
 </style>

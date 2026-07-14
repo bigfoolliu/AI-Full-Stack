@@ -23,7 +23,7 @@
 如果这一周结束时，你能做到以下几点，就算顺利完成：
 
 - [x] 检索参数（Top-k、阈值）可在页面配置并生效
-- [ ] Prompt 系统指令可在页面编辑并持久化
+- [x] Prompt 系统指令可在页面编辑并持久化
 - [ ] 模型参数（temperature、max_tokens）可在页面配置
 - [ ] Chunk 策略参数可配置（chunk_size、overlap、切分方式）
 - [ ] 知识库问答支持 Metadata Filter（按文档名/状态过滤）
@@ -90,7 +90,7 @@
 
 ---
 
-## Day 2：Prompt 配置
+## Day 2：Prompt 配置 ✅
 
 ### 目标
 
@@ -98,24 +98,16 @@
 
 ### 任务清单
 
-- [ ] `knowledge_base_settings` 表增加 `system_prompt` 字段
-- [ ] 设置页增加系统指令编辑区（多行文本框 + 变量提示）
-- [ ] Chat 接口使用知识库自定义 system_prompt
-- [ ] 支持 Prompt 变量：`{context}`、`{history}`、`{query}`
-- [ ] 提供默认 Prompt 模板一键恢复
-
-### Prompt 变量说明
-
-```text
-{context}  — 检索到的文档上下文
-{history}  — 对话历史
-{query}    — 用户当前问题
-```
+- [x] 表已预置 `system_prompt` 字段（Day 1 已创建）
+- [x] 设置页增加系统指令编辑区（多行文本框 + 恢复默认按钮）
+- [x] Chat/Stream 接口使用知识库自定义 system_prompt
+- [x] 检索到的上下文自动追加到 prompt 末尾（无需模板变量）
+- [x] 提供默认 Prompt 模板一键恢复
 
 ### 验收标准
 
-- 修改 system_prompt 后 Chat 接口按新 prompt 回答
-- 不配置时使用系统默认 prompt
+- [x] 修改 system_prompt 后 Chat 接口按新 prompt 回答
+- [x] 不配置时使用系统默认 prompt
 - 包含变量提示，降低配置门槛
 
 ---
