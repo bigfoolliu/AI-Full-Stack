@@ -52,6 +52,10 @@ const goToChat = () => {
   router.push(`/knowledge-bases/${knowledgeBaseId}/chat`);
 };
 
+const goToSettings = () => {
+  router.push(`/knowledge-bases/${knowledgeBaseId}/settings`);
+};
+
 const fetchDocuments = async (status?: string) => {
   loading.value = true;
 
@@ -248,6 +252,7 @@ onUnmounted(() => {
       </el-select>
       <el-button type="success" @click="goToChat">去问答</el-button>
       <el-button type="primary" @click="goToUpload">去上传文档</el-button>
+      <el-button @click="goToSettings">检索设置</el-button>
     </div>
 
     <template v-if="searchMode">

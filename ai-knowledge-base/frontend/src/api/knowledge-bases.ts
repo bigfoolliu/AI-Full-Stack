@@ -235,6 +235,43 @@ export const chatStream = (
   return controller;
 };
 
+export interface KnowledgeBaseSettingItem {
+  id: number;
+  knowledge_base_id: number;
+  top_k: number;
+  similarity_threshold: number;
+  system_prompt: string | null;
+  temperature: number;
+  max_tokens: number;
+  model_name: string | null;
+  hybrid_search: boolean;
+  hybrid_alpha: number;
+  updated_at: string;
+}
+
+export interface UpdateKnowledgeBaseSettingPayload {
+  top_k?: number;
+  similarity_threshold?: number;
+}
+
+export const getKnowledgeBaseSettings = async (id: string | number) => {
+  const response = await http.get<ApiResponse<KnowledgeBaseSettingItem>>(
+    `/api/knowledge-bases/${id}/settings`
+  );
+  return response.data;
+};
+
+export const updateKnowledgeBaseSettings = async (
+  id: string | number,
+  payload: UpdateKnowledgeBaseSettingPayload
+) => {
+  const response = await http.put<ApiResponse<KnowledgeBaseSettingItem>>(
+    `/api/knowledge-bases/${id}/settings`,
+    payload
+  );
+  return response.data;
+};
+
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
   `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
 

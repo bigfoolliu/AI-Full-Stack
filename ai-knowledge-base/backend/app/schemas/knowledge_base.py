@@ -33,3 +33,22 @@ class SaveChatSessionRequest(BaseModel):
 class SemanticSearchRequest(BaseModel):
     query: str
     top_k: int = 5
+
+
+class KnowledgeBaseSettingItem(BaseModel):
+    id: int
+    knowledge_base_id: int
+    top_k: int
+    similarity_threshold: float
+    system_prompt: str | None = None
+    temperature: float
+    max_tokens: int
+    model_name: str | None = None
+    hybrid_search: bool
+    hybrid_alpha: float
+    updated_at: str
+
+
+class UpdateKnowledgeBaseSettingRequest(BaseModel):
+    top_k: int | None = None
+    similarity_threshold: float | None = None

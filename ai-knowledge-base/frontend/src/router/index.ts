@@ -7,6 +7,7 @@ import KnowledgeBasesView from "../views/KnowledgeBasesView.vue";
 import LoginView from "../views/LoginView.vue";
 import KnowledgeBaseCreateView from "../views/KnowledgeBaseCreateView.vue";
 import KnowledgeBaseDocumentsView from "../views/KnowledgeBaseDocumentsView.vue";
+import KnowledgeBaseSettingsView from "../views/KnowledgeBaseSettingsView.vue";
 import KnowledgeBaseUploadView from "../views/KnowledgeBaseUploadView.vue";
 import ChatView from "../views/ChatView.vue";
 import { useUserStore } from "../stores/user";
@@ -33,6 +34,11 @@ const routes = [
   {
     path: "/knowledge-bases/:id/documents",
     component: KnowledgeBaseDocumentsView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/knowledge-bases/:id/settings",
+    component: KnowledgeBaseSettingsView,
     meta: { requiresAuth: true },
   },
   {

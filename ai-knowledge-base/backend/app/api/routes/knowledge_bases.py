@@ -12,15 +12,17 @@ from sqlalchemy.orm import Session
 
 from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
 from app.core.security import get_current_user, get_db
-from app.models import ChatMessage, ChatSession, Document, KnowledgeBase, User
+from app.models import ChatMessage, ChatSession, Document, KnowledgeBase, KnowledgeBaseSetting, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import (
     ChatRequest,
     ChatSessionMessagePayload,
     CreateKnowledgeBaseRequest,
     KnowledgeBaseItem,
+    KnowledgeBaseSettingItem,
     SaveChatSessionRequest,
     SemanticSearchRequest,
+    UpdateKnowledgeBaseSettingRequest,
 )
 from app.services.llm_service import LlmService
 from app.services.process_service import process_document
@@ -28,6 +30,12 @@ from app.services.search_service import search_documents
 from app.services.vector_service import VectorService
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
+
+
+def _filter_by_threshold(chunks: list[dict], threshold: float) -> list[dict]:
+    if threshold <= 0 or not chunks:
+        return chunks
+    return [c for c in chunks if c.get("score", 1.0) >= threshold]
 
 
 def _format_datetime(dt) -> str:
@@ -399,8 +407,9 @@ def search_knowledge_base_semantic(
             data=[],
         )
 
+    settings = _get_or_create_settings(knowledge_base_id, db)
     svc = VectorService()
-    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k or settings.top_k)
 
     return ApiResponse(code=0, message="ok", data=results)
 
@@ -416,11 +425,14 @@ def chat_with_knowledge_base(
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
 
+    settings = _get_or_create_settings(knowledge_base_id, db)
+
     context_chunks = []
     if EMBEDDING_API_KEY:
         svc = VectorService()
         try:
-            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=settings.top_k)
+            context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
         except RuntimeError:
             pass
 
@@ -448,11 +460,14 @@ def chat_stream_with_knowledge_base(
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
 
+    settings = _get_or_create_settings(knowledge_base_id, db)
+
     context_chunks = []
     if EMBEDDING_API_KEY:
         svc = VectorService()
         try:
-            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=req.top_k)
+            context_chunks = svc.search(query=req.query, kb_id=knowledge_base_id, limit=settings.top_k)
+            context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
         except RuntimeError:
             pass
 
@@ -575,6 +590,68 @@ def save_chat_session(
         message="ok",
         data=_serialize_chat_session(session, messages),
     )
+
+
+def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
+    return KnowledgeBaseSettingItem(
+        id=s.id,
+        knowledge_base_id=s.knowledge_base_id,
+        top_k=s.top_k,
+        similarity_threshold=s.similarity_threshold,
+        system_prompt=s.system_prompt,
+        temperature=s.temperature,
+        max_tokens=s.max_tokens,
+        model_name=s.model_name,
+        hybrid_search=s.hybrid_search,
+        hybrid_alpha=s.hybrid_alpha,
+        updated_at=_format_datetime(s.updated_at) if s.updated_at else "",
+    )
+
+
+def _get_or_create_settings(knowledge_base_id: int, db: Session) -> KnowledgeBaseSetting:
+    settings = (
+        db.query(KnowledgeBaseSetting).filter(KnowledgeBaseSetting.knowledge_base_id == knowledge_base_id).first()
+    )
+    if settings:
+        return settings
+    settings = KnowledgeBaseSetting(knowledge_base_id=knowledge_base_id)
+    db.add(settings)
+    db.commit()
+    db.refresh(settings)
+    return settings
+
+
+@router.get("/knowledge-bases/{knowledge_base_id}/settings", response_model=ApiResponse)
+def get_knowledge_base_settings(
+    knowledge_base_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+    settings = _get_or_create_settings(knowledge_base_id, db)
+    return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())
+
+
+@router.put("/knowledge-bases/{knowledge_base_id}/settings", response_model=ApiResponse)
+def update_knowledge_base_settings(
+    knowledge_base_id: int,
+    payload: UpdateKnowledgeBaseSettingRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+    settings = _get_or_create_settings(knowledge_base_id, db)
+    if payload.top_k is not None:
+        settings.top_k = payload.top_k
+    if payload.similarity_threshold is not None:
+        settings.similarity_threshold = payload.similarity_threshold
+    db.commit()
+    db.refresh(settings)
+    return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())
 
 
 def _status_label(status: str) -> str:
