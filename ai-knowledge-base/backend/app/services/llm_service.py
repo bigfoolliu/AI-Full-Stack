@@ -24,6 +24,9 @@ class LlmService:
         context_chunks: list[dict],
         history: list[dict] | None = None,
         system_prompt: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        model: str | None = None,
     ) -> dict:
         if not self.client:
             return {
@@ -34,10 +37,10 @@ class LlmService:
         messages = self._build_messages(query, context_chunks, history, system_prompt)
 
         response = self.client.chat.completions.create(
-            model=self.model,
+            model=model or self.model,
             messages=messages,
-            temperature=0.7,
-            max_tokens=2048,
+            temperature=temperature if temperature is not None else 0.7,
+            max_tokens=max_tokens if max_tokens is not None else 2048,
         )
 
         answer = response.choices[0].message.content or ""
@@ -53,6 +56,9 @@ class LlmService:
         context_chunks: list[dict],
         history: list[dict] | None = None,
         system_prompt: str | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
+        model: str | None = None,
     ) -> Generator[str, None, None]:
         if not self.client:
             yield f"data: {json.dumps({'type': 'token', 'content': 'LLM API Key 未配置，无法回答问题。'})}\n\n"
@@ -63,10 +69,10 @@ class LlmService:
         messages = self._build_messages(query, context_chunks, history, system_prompt)
 
         stream = self.client.chat.completions.create(
-            model=self.model,
+            model=model or self.model,
             messages=messages,
-            temperature=0.7,
-            max_tokens=2048,
+            temperature=temperature if temperature is not None else 0.7,
+            max_tokens=max_tokens if max_tokens is not None else 2048,
             stream=True,
         )
 

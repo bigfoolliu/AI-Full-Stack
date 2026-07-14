@@ -249,11 +249,24 @@ export interface KnowledgeBaseSettingItem {
   updated_at: string;
 }
 
+export interface ModelOption {
+  id: string;
+  name: string;
+}
+
 export interface UpdateKnowledgeBaseSettingPayload {
   top_k?: number;
   similarity_threshold?: number;
   system_prompt?: string | null;
+  temperature?: number;
+  max_tokens?: number;
+  model_name?: string | null;
 }
+
+export const listModels = async () => {
+  const response = await http.get<ApiResponse<ModelOption[]>>("/api/models");
+  return response.data;
+};
 
 export const getKnowledgeBaseSettings = async (id: string | number) => {
   const response = await http.get<ApiResponse<KnowledgeBaseSettingItem>>(

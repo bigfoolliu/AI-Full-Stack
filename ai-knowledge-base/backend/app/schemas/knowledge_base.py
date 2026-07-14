@@ -53,3 +53,6 @@ class UpdateKnowledgeBaseSettingRequest(BaseModel):
     top_k: int | None = None
     similarity_threshold: float | None = None
     system_prompt: str | None = None
+    temperature: float | None = None
+    max_tokens: int | None = None
+    model_name: str | None = None

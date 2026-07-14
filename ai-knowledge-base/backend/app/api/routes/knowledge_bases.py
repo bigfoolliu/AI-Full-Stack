@@ -442,6 +442,9 @@ def chat_with_knowledge_base(
         context_chunks=context_chunks,
         history=req.history,
         system_prompt=settings.system_prompt,
+        temperature=settings.temperature,
+        max_tokens=settings.max_tokens,
+        model=settings.model_name,
     )
 
     return ApiResponse(
@@ -483,6 +486,9 @@ def chat_stream_with_knowledge_base(
             context_chunks=context_chunks,
             history=req.history,
             system_prompt=settings.system_prompt,
+            temperature=settings.temperature,
+            max_tokens=settings.max_tokens,
+            model=settings.model_name,
         ),
         media_type="text/event-stream",
     )
@@ -631,6 +637,24 @@ def _get_or_create_settings(knowledge_base_id: int, db: Session) -> KnowledgeBas
     return settings
 
 
+AVAILABLE_MODELS = [
+    {"id": "qwen-plus", "name": "通义千问 Plus"},
+    {"id": "qwen-turbo", "name": "通义千问 Turbo"},
+    {"id": "qwen-max", "name": "通义千问 Max"},
+    {"id": "gpt-4o-mini", "name": "GPT-4o Mini"},
+    {"id": "gpt-4o", "name": "GPT-4o"},
+    {"id": "deepseek-chat", "name": "DeepSeek Chat"},
+    {"id": "gemini-2.0-flash-exp", "name": "Gemini 2.0 Flash"},
+]
+
+
+@router.get("/models", response_model=ApiResponse)
+def list_models(
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    return ApiResponse(code=0, message="ok", data=AVAILABLE_MODELS)
+
+
 @router.get("/knowledge-bases/{knowledge_base_id}/settings", response_model=ApiResponse)
 def get_knowledge_base_settings(
     knowledge_base_id: int,
@@ -661,6 +685,12 @@ def update_knowledge_base_settings(
         settings.similarity_threshold = payload.similarity_threshold
     if payload.system_prompt is not None:
         settings.system_prompt = payload.system_prompt
+    if payload.temperature is not None:
+        settings.temperature = payload.temperature
+    if payload.max_tokens is not None:
+        settings.max_tokens = payload.max_tokens
+    if payload.model_name is not None:
+        settings.model_name = payload.model_name
     db.commit()
     db.refresh(settings)
     return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())

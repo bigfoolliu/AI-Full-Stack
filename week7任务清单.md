@@ -24,7 +24,7 @@
 
 - [x] 检索参数（Top-k、阈值）可在页面配置并生效
 - [x] Prompt 系统指令可在页面编辑并持久化
-- [ ] 模型参数（temperature、max_tokens）可在页面配置
+- [x] 模型参数（temperature、max_tokens）可在页面配置
 - [ ] Chunk 策略参数可配置（chunk_size、overlap、切分方式）
 - [ ] 知识库问答支持 Metadata Filter（按文档名/状态过滤）
 - [ ] 支持 Hybrid Search（关键词 + 语义融合）
@@ -112,7 +112,7 @@
 
 ---
 
-## Day 3：模型参数配置
+## Day 3：模型参数配置 ✅
 
 ### 目标
 
@@ -120,19 +120,19 @@
 
 ### 任务清单
 
-- [ ] `knowledge_base_settings` 表增加 `temperature`、`max_tokens`、`model_name` 字段
-- [ ] 设置页增加模型参数配置区域
-- [ ] temperature 滑块（0-2，步长 0.1）
-- [ ] max_tokens 数字输入（256-8192）
-- [ ] model_name 下拉选择（可配置选项列表）
-- [ ] Chat/Stream 接口使用自定义模型参数
-- [ ] 保存后即时生效
+- [x] 表已预置 `temperature`、`max_tokens`、`model_name` 字段（Day 1 已创建）
+- [x] 设置页增加模型参数配置区域
+- [x] temperature 滑块（0-2，步长 0.1）
+- [x] max_tokens 数字输入（256-8192）
+- [x] model_name 下拉选择（`GET /api/models` 接口返回可用模型列表）
+- [x] Chat/Stream 接口使用自定义模型参数
+- [x] 保存后即时生效
 
 ### 验收标准
 
-- 可在页面调整 temperature 和 max_tokens
-- Chat 接口使用新参数调用 LLM
-- 参数持久化到数据库
+- [x] 可在页面调整 temperature 和 max_tokens
+- [x] Chat 接口使用新参数调用 LLM
+- [x] 参数持久化到数据库
 
 ---
 
