@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import MarkdownIt from 'markdown-it';
 import { http } from '../api/http';
+import { sanitizeMarkdown } from '../utils/sanitize';
 
 const md = new MarkdownIt({ html: false, breaks: true });
 const route = useRoute();
@@ -58,8 +59,9 @@ const runCompare = async () => {
       filter: { status: 'completed' },
     });
     resultB.value = resB.data.data;
-  } catch (err: any) {
-    ElMessage.error(err?.response?.data?.detail || '请求失败');
+  } catch (err: unknown) {
+    const axiosErr = err as { response?: { data?: Record<string, unknown> } } | null;
+    ElMessage.error((axiosErr?.response?.data?.detail as string) || '请求失败');
   } finally {
     loadingA.value = false;
     loadingB.value = false;
@@ -105,7 +107,7 @@ const labelB = '配置 B（对比）';
               耗时 {{ resultA.metrics.time_ms }}ms
             </el-tag>
           </div>
-          <div class="compare-answer" v-html="md.render(resultA.answer || '')" />
+          <div class="compare-answer" v-html="sanitizeMarkdown(md.render(resultA.answer || ''))" />
           <div v-if="resultA.sources?.length" class="compare-sources">
             <div class="compare-sources__title">来源 ({{ resultA.sources.length }})</div>
             <div v-for="(s, i) in resultA.sources" :key="i" class="compare-source-item">
@@ -126,7 +128,7 @@ const labelB = '配置 B（对比）';
               耗时 {{ resultB.metrics.time_ms }}ms
             </el-tag>
           </div>
-          <div class="compare-answer" v-html="md.render(resultB.answer || '')" />
+          <div class="compare-answer" v-html="sanitizeMarkdown(md.render(resultB.answer || ''))" />
           <div v-if="resultB.sources?.length" class="compare-sources">
             <div class="compare-sources__title">来源 ({{ resultB.sources.length }})</div>
             <div v-for="(s, i) in resultB.sources" :key="i" class="compare-source-item">

@@ -21,6 +21,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
+def validate_password_strength(password: str) -> str | None:
+    """校验密码强度，返回 None 表示合规，否则返回中文提示。"""
+    if len(password) < 8:
+        return "密码长度不能少于 8 位"
+    if not any(c.isupper() for c in password):
+        return "密码必须包含至少一个大写字母"
+    if not any(c.islower() for c in password):
+        return "密码必须包含至少一个小写字母"
+    if not any(c.isdigit() for c in password):
+        return "密码必须包含至少一个数字"
+    return None
+
+
 def get_password_hash(password: str) -> str:
     """使用 bcrypt 对密码进行哈希。"""
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -57,10 +70,11 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
-        user_id = int(payload.get("sub"))
+        user_id = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+        user_id = int(user_id)
+    except (JWTError, TypeError, ValueError):
         raise credentials_exception
 
     from app.models import User

@@ -1,5 +1,9 @@
 import { http } from "./http";
 
+function apiBaseUrl(): string {
+  return http.defaults.baseURL || "";
+}
+
 interface ApiResponse<T> {
   code: number;
   message: string;
@@ -117,9 +121,16 @@ export const getDocumentContent = async (kbId: string | number, docId: number) =
   return response.data;
 };
 
+export interface SourceItem {
+  filename: string;
+  content: string;
+  score: number;
+  page_number?: number;
+}
+
 export interface ChatStreamCallbacks {
   onToken: (token: string) => void;
-  onSources: (sources: any[]) => void;
+  onSources: (sources: SourceItem[]) => void;
   onDone: () => void;
   onError: (error: Error) => void;
 }
@@ -174,7 +185,7 @@ export const chatStream = (
   (async () => {
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/api/knowledge-bases/${kbId}/chat/stream`,
+        `${apiBaseUrl()}/api/knowledge-bases/${kbId}/chat/stream`,
         {
           method: "POST",
           headers: {
@@ -226,8 +237,8 @@ export const chatStream = (
           }
         }
       }
-    } catch (err: any) {
-      if (err.name === "AbortError") return;
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") return;
       callbacks.onError(err instanceof Error ? err : new Error(String(err)));
     }
   })();
@@ -336,7 +347,7 @@ export const sendChatFeedback = async (
 };
 
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
-  `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
+  `${apiBaseUrl()}/api/knowledge-bases/${knowledgeBaseId}/documents`;
 
 export const getUploadHeaders = () => {
   const token = localStorage.getItem("ai-kb-token");

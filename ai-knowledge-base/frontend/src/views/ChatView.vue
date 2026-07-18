@@ -13,11 +13,13 @@ import {
   type ChatSessionItem,
 } from '../api/knowledge-bases';
 
+import { sanitizeMarkdown } from '../utils/sanitize';
+
 import EmptyState from '../components/EmptyState.vue';
 
 const md = new MarkdownIt({ html: false, breaks: true });
 
-const mdRenderer = (text: string) => md.render(text);
+const mdRenderer = (text: string) => sanitizeMarkdown(md.render(text));
 
 interface SourceItem {
   filename: string;
@@ -147,11 +149,10 @@ const persistCurrentSession = async (snapshot: Message[]) => {
     const updated = [...messages.value];
     let apiIdx = 0;
     for (let i = 0; i < updated.length && apiIdx < apiMessages.length; i++) {
-      if (
-        updated[i].role === apiMessages[apiIdx].role &&
-        updated[i].content === apiMessages[apiIdx].content
-      ) {
-        updated[i].messageId = apiMessages[apiIdx].id;
+      const u = updated[i]!;
+      const a = apiMessages[apiIdx]!;
+      if (u.role === a.role && u.content === a.content) {
+        u.messageId = a.id;
         apiIdx++;
       }
     }
@@ -230,7 +231,8 @@ const retry = () => {
     inputText.value = lastUserMsg.content;
     messages.value = messages.value.filter((m) => m !== lastUserMsg);
     const lastAssistantIdx = messages.value.length - 1;
-    if (lastAssistantIdx >= 0 && messages.value[lastAssistantIdx].role === 'assistant') {
+    const lastMsg = lastAssistantIdx >= 0 ? messages.value[lastAssistantIdx] : undefined;
+    if (lastMsg && lastMsg.role === 'assistant') {
       messages.value.pop();
     }
   }
@@ -260,7 +262,7 @@ const deleteSession = async (session: ChatSessionItem) => {
     sessions.value = sessions.value.filter((s) => s.id !== session.id);
     if (currentSessionId.value === session.id) {
       if (sessions.value.length > 0) {
-        setActiveSession(sessions.value[0]);
+        setActiveSession(sessions.value[0] ?? null);
       } else {
         newChat();
       }
@@ -313,7 +315,9 @@ const formatScore = (score: number) => {
 const submitFeedback = async (msg: Message, idx: number, feedback: 'thumbs_up' | 'thumbs_down') => {
   if (!msg.messageId) return;
   const updated = [...messages.value];
-  updated[idx] = { ...updated[idx], feedback, showFeedbackComment: feedback === 'thumbs_down' };
+  const item = updated[idx];
+  if (!item) return;
+  updated[idx] = { ...item, feedback, showFeedbackComment: feedback === 'thumbs_down' };
   messages.value = updated;
 
   try {
@@ -324,7 +328,9 @@ const submitFeedback = async (msg: Message, idx: number, feedback: 'thumbs_up' |
     });
   } catch {
     const reverted = [...messages.value];
-    reverted[idx] = { ...reverted[idx], feedback: undefined, showFeedbackComment: false };
+    const revertedItem = reverted[idx];
+    if (!revertedItem) return;
+    reverted[idx] = { ...revertedItem, feedback: undefined, showFeedbackComment: false };
     messages.value = reverted;
   }
 };
@@ -340,7 +346,9 @@ const submitFeedbackComment = async (msg: Message, idx: number) => {
       comment,
     });
     const updated = [...messages.value];
-    updated[idx] = { ...updated[idx], showFeedbackComment: false };
+    const item = updated[idx];
+    if (!item) return;
+    updated[idx] = { ...item, showFeedbackComment: false };
     messages.value = updated;
   } catch {
     // ignore

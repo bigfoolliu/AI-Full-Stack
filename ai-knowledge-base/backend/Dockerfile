@@ -6,6 +6,12 @@ RUN uv sync --frozen --no-dev
 
 COPY . .
 
+RUN adduser --disabled-password --gecos '' appuser && \
+    mkdir -p /app/data /app/uploads && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
 EXPOSE 8000
 
 ENV PATH="/app/.venv/bin:$PATH"

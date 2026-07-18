@@ -9,7 +9,8 @@ services:
       - "8080:80"
     depends_on:
       backend:
-        condition: service_started
+        condition: service_healthy
+    restart: unless-stopped
     <<: *common-net
 
   backend:
@@ -25,19 +26,33 @@ services:
       DATABASE_URL: sqlite:////app/data/knowledge_base.db
     depends_on:
       qdrant:
-        condition: service_started
+        condition: service_healthy
     volumes:
       - backend-uploads:/app/uploads
       - backend-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     <<: *common-net
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.13.6
     ports:
       - "6333:6333"
       - "6334:6334"
     volumes:
       - qdrant-data:/qdrant/storage
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     <<: *common-net
 
   db:
@@ -60,6 +75,12 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
     <<: *common-net
 
 volumes:

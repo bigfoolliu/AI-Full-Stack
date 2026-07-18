@@ -63,6 +63,7 @@ class VectorService:
         status: str = "completed",
     ) -> int:
         """向量化 chunks 并写入 Qdrant，同时记录 payload 元信息。"""
+        self._ensure_collection()
         texts = [c["content"] for c in chunks]
         vectors = self.embed_texts(texts)
 
@@ -100,6 +101,7 @@ class VectorService:
         filename: str | None = None,
     ) -> list[dict]:
         """向量相似度搜索，支持 kb_id / filename 过滤。"""
+        self._ensure_collection()
         query_vector = self.embed_texts([query])[0]
 
         from qdrant_client.models import FieldCondition, Filter, MatchValue
@@ -227,6 +229,7 @@ LIMIT :limit
         """从 Qdrant 中删除指定文档的所有向量块。"""
         from qdrant_client.models import FieldCondition, Filter, MatchValue
 
+        self._ensure_collection()
         self.qdrant.delete(
             collection_name=self.collection_name,
             points_selector=Filter(

@@ -53,8 +53,9 @@ export const useUserStore = defineStore("user", () => {
       nickname.value = result.data.user.nickname;
       persist();
       return true;
-    } catch (error: any) {
-      loginError.value = error?.response?.data?.detail || "登录请求失败，请稍后重试";
+    } catch (error: unknown) {
+      const axiosErr = error as { response?: { data?: Record<string, unknown> } } | null;
+      loginError.value = (axiosErr?.response?.data?.detail as string) || "登录请求失败，请稍后重试";
       return false;
     } finally {
       loginLoading.value = false;

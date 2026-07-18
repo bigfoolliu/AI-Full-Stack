@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
+import { sanitizeHtml } from '../utils/sanitize';
 import EmptyState from '../components/EmptyState.vue';
 import {
   getKnowledgeBaseDetail,
@@ -271,7 +272,7 @@ onUnmounted(() => {
         </el-table-column>
         <el-table-column label="内容片段" min-width="300">
           <template #default="{ row }">
-            <span class="snippet-text" v-html="row.snippet" />
+            <span class="snippet-text" v-html="sanitizeHtml(row.snippet || '')" />
           </template>
         </el-table-column>
         <el-table-column prop="updated_at" label="更新时间" width="180" />

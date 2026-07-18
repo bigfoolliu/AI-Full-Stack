@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class LoginRequest(BaseModel):
@@ -6,6 +6,24 @@ class LoginRequest(BaseModel):
 
     username: str
     password: str
+
+
+class RegisterRequest(BaseModel):
+    """注册请求体。"""
+
+    username: str
+    password: str
+    nickname: str | None = None
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        from app.core.security import validate_password_strength
+
+        msg = validate_password_strength(v)
+        if msg:
+            raise ValueError(msg)
+        return v
 
 
 class UserInfo(BaseModel):

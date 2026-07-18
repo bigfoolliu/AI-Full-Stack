@@ -2,6 +2,7 @@
 知识库 api
 """
 
+import logging
 import os
 import time
 
@@ -33,6 +34,8 @@ from app.services.process_service import process_document
 from app.services.rerank_service import RerankService, compute_retrieval_metrics
 from app.services.search_service import search_documents
 from app.services.vector_service import VectorService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
 
@@ -79,8 +82,8 @@ def _retrieve_context(
                 limit=settings.top_k * 3 if settings.rerank_enabled else settings.top_k,
                 filename=filename,
             )
-    except RuntimeError:
-        pass
+    except RuntimeError as e:
+        logger.warning("向量搜索失败 (kb_id=%s): %s", kb_id, e)
 
     context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
     elapsed = (time.time() - t0) * 1000
