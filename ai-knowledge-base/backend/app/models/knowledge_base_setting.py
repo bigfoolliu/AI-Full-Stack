@@ -4,7 +4,7 @@ from app.core.database import Base
 
 
 class KnowledgeBaseSetting(Base):
-    """知识库可配置参数：检索、Prompt、模型、Hybrid Search、Rerank。"""
+    """知识库可配置参数：检索、Prompt、模型、Hybrid Search、Rerank、Chunk 策略。"""
 
     __tablename__ = "knowledge_base_settings"
 
@@ -20,4 +20,7 @@ class KnowledgeBaseSetting(Base):
     hybrid_alpha = Column(Float, nullable=False, default=0.3)
     rerank_enabled = Column(Boolean, nullable=False, default=False)
     rerank_top_k = Column(Integer, nullable=False, default=5)
+    chunk_size = Column(Integer, nullable=False, default=512)
+    overlap = Column(Integer, nullable=False, default=64)
+    chunk_strategy = Column(String(16), nullable=False, default="recursive")
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

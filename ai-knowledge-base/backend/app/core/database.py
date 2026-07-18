@@ -2,7 +2,7 @@
 数据库操作
 """
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
 from app.core.config import DATABASE_URL
@@ -30,6 +30,8 @@ def init_db():
     )
 
     Base.metadata.create_all(bind=engine)
+
+    _migrate_kb_settings(engine)
 
     with engine.connect() as conn:
         conn.exec_driver_sql("""\
@@ -86,3 +88,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS document_fts USING fts5(
         session.commit()
     finally:
         session.close()
+
+
+def _migrate_kb_settings(engine):
+    """为已有的 knowledge_base_settings 表补充 Week 8 新增的 chunk 列。"""
+    inspector = inspect(engine)
+    columns = {c["name"] for c in inspector.get_columns("knowledge_base_settings")}
+    migrations = [
+        ("chunk_size", "INTEGER NOT NULL DEFAULT 512"),
+        ("overlap", "INTEGER NOT NULL DEFAULT 64"),
+        ("chunk_strategy", "VARCHAR(16) NOT NULL DEFAULT 'recursive'"),
+    ]
+    with engine.connect() as conn:
+        for col_name, col_type in migrations:
+            if col_name not in columns:
+                conn.exec_driver_sql(f"ALTER TABLE knowledge_base_settings ADD COLUMN {col_name} {col_type}")
+        conn.commit()

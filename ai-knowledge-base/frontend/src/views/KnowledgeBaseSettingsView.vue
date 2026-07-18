@@ -30,6 +30,9 @@ const hybridSearch = ref(false);
 const hybridAlpha = ref(0.3);
 const rerankEnabled = ref(false);
 const rerankTopK = ref(5);
+const chunkSize = ref(512);
+const overlap = ref(64);
+const chunkStrategy = ref('recursive');
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个知识库问答助手。
 请基于以下检索到的文档内容回答用户的问题。
@@ -60,6 +63,9 @@ const loadSettings = async () => {
     hybridAlpha.value = res.data.hybrid_alpha;
     rerankEnabled.value = res.data.rerank_enabled;
     rerankTopK.value = res.data.rerank_top_k;
+    chunkSize.value = res.data.chunk_size;
+    overlap.value = res.data.overlap;
+    chunkStrategy.value = res.data.chunk_strategy;
   } catch {
     ElMessage.error('加载设置失败');
   } finally {
@@ -81,6 +87,9 @@ const saveSettings = async () => {
       hybrid_alpha: hybridAlpha.value,
       rerank_enabled: rerankEnabled.value,
       rerank_top_k: rerankTopK.value,
+      chunk_size: chunkSize.value,
+      overlap: overlap.value,
+      chunk_strategy: chunkStrategy.value,
     });
     ElMessage.success('设置已保存');
   } catch {
@@ -240,6 +249,54 @@ onMounted(loadSettings);
           </div>
           <p class="kb-settings-page__hint">
             重排序后最终返回的结果数。首次检索会取更多候选，再由 Rerank 精排到该数量。
+          </p>
+        </el-form-item>
+
+        <el-divider />
+
+        <h3 class="kb-settings-page__section-title">文档切片参数</h3>
+        <p class="kb-settings-page__hint kb-settings-page__section-desc">
+          控制文档解析后的切分方式。修改后仅对新处理的文档生效，存量文档不受影响。
+        </p>
+
+        <el-form-item label="切分策略">
+          <el-radio-group v-model="chunkStrategy">
+            <el-radio value="recursive">递归切分（按段落→句子，优先保留语义完整块）</el-radio>
+            <el-radio value="fixed">固定窗口切分（按固定字符数滑动窗口）</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item label="Chunk Size（每块字符数）">
+          <div class="kb-settings-page__slider-row">
+            <el-slider
+              v-model="chunkSize"
+              :min="128"
+              :max="2048"
+              :step="128"
+              show-stops
+              style="width: 300px"
+            />
+            <span class="kb-settings-page__value">{{ chunkSize }}</span>
+          </div>
+          <p class="kb-settings-page__hint">
+            每个文档片段的字符数。值越小检索粒度越细，但上下文连续性越差。
+          </p>
+        </el-form-item>
+
+        <el-form-item label="Overlap（重叠字符数）">
+          <div class="kb-settings-page__slider-row">
+            <el-slider
+              v-model="overlap"
+              :min="0"
+              :max="Math.min(512, Math.max(0, chunkSize - 1))"
+              :step="32"
+              show-stops
+              style="width: 300px"
+            />
+            <span class="kb-settings-page__value">{{ overlap }}</span>
+          </div>
+          <p class="kb-settings-page__hint">
+            相邻片段之间的重叠字符数，用于保持上下文连贯性。不能超过 chunk_size。
           </p>
         </el-form-item>
 

@@ -744,6 +744,9 @@ def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
         hybrid_alpha=s.hybrid_alpha,
         rerank_enabled=s.rerank_enabled,
         rerank_top_k=s.rerank_top_k,
+        chunk_size=s.chunk_size,
+        overlap=s.overlap,
+        chunk_strategy=s.chunk_strategy,
         updated_at=_format_datetime(s.updated_at) if s.updated_at else "",
     )
 
@@ -827,6 +830,12 @@ def update_knowledge_base_settings(
         settings.rerank_enabled = payload.rerank_enabled
     if payload.rerank_top_k is not None:
         settings.rerank_top_k = payload.rerank_top_k
+    if payload.chunk_size is not None:
+        settings.chunk_size = payload.chunk_size
+    if payload.overlap is not None:
+        settings.overlap = payload.overlap
+    if payload.chunk_strategy is not None:
+        settings.chunk_strategy = payload.chunk_strategy
     db.commit()
     db.refresh(settings)
     return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())

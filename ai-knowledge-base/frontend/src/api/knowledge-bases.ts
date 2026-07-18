@@ -248,6 +248,9 @@ export interface KnowledgeBaseSettingItem {
   hybrid_alpha: number;
   rerank_enabled: boolean;
   rerank_top_k: number;
+  chunk_size: number;
+  overlap: number;
+  chunk_strategy: string;
   updated_at: string;
 }
 
@@ -267,6 +270,9 @@ export interface UpdateKnowledgeBaseSettingPayload {
   hybrid_alpha?: number;
   rerank_enabled?: boolean;
   rerank_top_k?: number;
+  chunk_size?: number;
+  overlap?: number;
+  chunk_strategy?: string;
 }
 
 export const listModels = async () => {

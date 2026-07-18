@@ -71,6 +71,9 @@ class KnowledgeBaseSettingItem(BaseModel):
     hybrid_alpha: float
     rerank_enabled: bool
     rerank_top_k: int
+    chunk_size: int = 512
+    overlap: int = 64
+    chunk_strategy: str = "recursive"
     updated_at: str
 
 
@@ -87,6 +90,9 @@ class UpdateKnowledgeBaseSettingRequest(BaseModel):
     hybrid_alpha: float | None = None
     rerank_enabled: bool | None = None
     rerank_top_k: int | None = None
+    chunk_size: int | None = None
+    overlap: int | None = None
+    chunk_strategy: str | None = None
 
 
 class ChatFeedbackRequest(BaseModel):
