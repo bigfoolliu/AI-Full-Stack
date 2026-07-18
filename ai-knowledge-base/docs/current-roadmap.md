@@ -2,21 +2,26 @@
 
 ## Current Priorities
 
-1. Stabilize the RAG flow (Week 7):
-   - supplement backend test coverage (unit + integration)
-   - improve frontend error boundaries and exception handling
-   - check frontend/backend type consistency
-2. Iterate session features:
-   - session delete / rename
-   - link sessions to users
+1. Chunk strategy configuration (Week 8):
+   - add chunk_size / overlap / chunk_strategy to KnowledgeBaseSetting
+   - settings page UI for chunk params
+   - process_service reads chunk params from settings
+2. Session management enhancement:
+   - session delete and rename
+   - link sessions to users (user_id in chat_sessions)
    - basic knowledge-base permission model
-3. Performance:
-   - async document processing (Celery / background tasks)
-   - streaming response latency improvements
-   - search response time optimization
+3. UX polish:
+   - knowledge base copy / move
+   - markdown rendering improvements (code highlighting)
+   - typing animation optimization for streaming output
+4. Engineering:
+   - async document processing (FastAPI BackgroundTasks)
+   - global error boundary components
+   - search response caching
 
 ## Completed
 
+- Week 7: RAG system tuning — configurable retrieval/prompt/model params, Hybrid Search, Metadata Filter, Rerank, Feedback, A/B comparison, metrics
 - Week 6: LLM integration, RAG Q&A, SSE streaming, Chat dialog, session history
 - Week 5: Document processing pipeline, chunking, vector search (Qdrant), FTS5
 - Week 4: Database migration, JWT auth, document parsing, FTS5 full-text search

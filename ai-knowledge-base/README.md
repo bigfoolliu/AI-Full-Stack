@@ -65,6 +65,13 @@
 - **状态标签配色统一**：待处理→灰色、处理中→蓝色、已完成→绿色、处理失败→红色
 - **状态筛选选项修复**：filter 值与后端 `_status_label` 对齐，新增"处理失败"选项
 
+### 前端（第 7 周新增）
+
+- **知识库设置页** `/knowledge-bases/:id/settings` — 检索参数（Top‑k/阈值）、Prompt 编辑、模型参数（temperature/max_tokens/model）、Hybrid Search 开关与权重、Rerank 开关与 top_k，全部页面可配，实时生效
+- **Chat 反馈按钮** — 每条 AI 回复下方 👍 👎 按钮，点击即发送反馈，支持切换和备注
+- **效果对比页** `/knowledge-bases/:id/compare` — 双栏并列展示两组不同参数配置的检索 + 回答结果，含指标标签
+- **会话管理** — 左侧会话列表，支持新建/切换对话
+
 ### 前端（第 3 周新增）
 
 - **知识库列表页** — 全面 EP 化：`ElTable` + `ElPagination` 分页 + `ElInput` 搜索（300ms debounce）+ 搜索与分页联动
@@ -120,6 +127,18 @@
 - **配置泛化**：从 OpenAI 专用配置迁移为通用 `EMBEDDING_API_KEY`/`EMBEDDING_BASE_URL`/`EMBEDDING_MODEL`/`EMBEDDING_DIMENSION`
 - **Docker Compose Qdrant**：`docker-compose.yml` 增加 Qdrant 服务（端口 6333/6334，数据持久化到 `data/qdrant/`）
 - **Pre-commit 规范**：`.pre-commit-config.yaml` + ruff 格式化/排序 + prettier 前端格式化
+
+### 后端（第 7 周新增）
+
+- **知识库配置系统**：`knowledge_base_settings` 表 + `GET/PUT /api/knowledge-bases/{id}/settings` 接口，支持检索/Prompt/模型/Hybrid Search/Rerank 全量参数配置
+- **检索参数实时生效**：Chat/Search/Stream 接口统一通过 `_get_or_create_settings()` 读取配置，修改后即时生效
+- **Hybrid Search**：`vector_service.hybrid_search()` 实现向量 + FTS5 关键词按 alpha 权重融合
+- **Metadata Filter**：检索支持按 `filename` 和 `status` 过滤（Qdrant payload 精确匹配）
+- **Rerank 服务**：`rerank_service.py` 实现关键词密度+向量分数融合策略，无需额外 API
+- **Retrieval 指标**：`compute_retrieval_metrics()` 返回命中数、得分分布、耗时，通过 SSE `metrics` 事件推送到前端
+- **回答反馈**：`POST /api/knowledge-bases/{id}/chat/feedback` 接口，支持提交/切换 thumbs_up/thumbs_down
+- **A/B 对比**：`POST /api/knowledge-bases/{id}/chat/compare` 并行运行两组参数配置，返回两路结果
+- **SSE 流式升级**：`chat_stream()` 新增 `metrics` SSE 事件类型
 
 ### 联调情况
 
@@ -291,6 +310,38 @@ npm run dev
 | Chat 对话页 | `/knowledge-bases/:id/chat` | 新增：完整对话页面 |
 | 知识库详情页 | `/knowledge-bases/:id/documents` | 新增"问答"入口按钮 |
 
+## 第 7 周接口清单
+
+第 7 周新增以下接口：
+
+1. `GET /api/knowledge-bases/{id}/settings` — 获取知识库配置
+2. `PUT /api/knowledge-bases/{id}/settings` — 更新知识库配置
+3. `POST /api/knowledge-bases/{id}/chat/feedback` — 提交/切换消息反馈
+4. `POST /api/knowledge-bases/{id}/chat/compare` — A/B 效果对比
+5. `GET /api/models` — 可用大模型列表
+
+## 第 7 周页面清单
+
+| 页面 | 路径 | 变更 |
+|------|------|------|
+| 知识库设置页 | `/knowledge-bases/:id/settings` | 新增：全量参数配置表单 |
+| Chat 对话页 | `/knowledge-bases/:id/chat` | 新增：反馈按钮、效果对比入口 |
+| 效果对比页 | `/knowledge-bases/:id/compare` | 新增：双栏 A/B 对比 |
+
+## 第 7 周完成内容总结
+
+- **参数配置页面化**：检索参数（Top‑k/阈值）、Prompt 模板、模型参数（temperature/max_tokens/model）、Hybrid Search 开关与权重、Rerank 开关与 top_k，全部页面可调，实时生效
+- **Hybrid Search**：FTS5 关键词 + Qdrant 向量融合，alpha 权重可调，检索覆盖面大幅提升
+- **Metadata Filter**：支持按文档名和状态过滤检索范围
+- **Rerank 重排序**：关键词密度+向量分数融合策略，无需额外 API，设置页一键开启
+- **回答反馈**：每条 AI 回复可评价有用/无用，数据持久化到数据库
+- **A/B 效果对比**：双栏页面展示不同配置下的回答效果，辅助调优决策
+- **Retrieval 指标**：检索命中数、得分分布、耗时在每次回答中实时返回
+- **全链路文档化**：所有类和函数增加 docstring，新增 `docs/config-parameters.md` 参数说明，`week7任务清单.md` 完整记录
+- **测试覆盖**：7 个后端测试脚本覆盖解析、处理、语义搜索、Chat、会话、反馈核心链路
+
+第 7 周的项目从 **「AI 应用工程：对话与推理阶段」** 推进到 **「RAG 系统调优与工程化阶段」**。
+
 ## 第 6 周完成内容总结
 
 - **LLM 接入**：集成 DashScope Qwen API（OpenAI 兼容格式），支持 `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` 自定义配置
@@ -303,30 +354,36 @@ npm run dev
 
 第 6 周的项目已经从 **「RAG 最小闭环」**推进到 **「AI 应用工程：对话与推理阶段」**。
 
-## 下周计划（Week 7）
+## 下周计划（Week 8）
 
-### 1. 质量与工程化
+### 1. Chunk 策略可配置
 
-- 补充后端测试覆盖（单元测试 + 集成测试）
-- 前端错误边界与异常处理完善
-- 前后端类型一致性检查
+- `knowledge_base_settings` 增加 `chunk_size`、`overlap`、`chunk_strategy` 字段
+- 设置页增加 Chunk 参数配置区域
+- 文档处理流程读取配置的 Chunk 参数
 
-### 2. 功能迭代
+### 2. 会话管理完善
 
-- 会话删除 / 重命名
-- 会话与用户关联
-- 知识库权限基础
+- 会话删除（`DELETE /api/.../sessions/{id}`）
+- 会话重命名（双击标题或右键菜单）
+- 会话与用户关联（`chat_sessions` 增加 `user_id`）
 
-### 3. 性能优化
+### 3. 交互体验优化
 
-- 文档处理异步化（Celery / 后台任务）
-- 流式响应延迟优化
-- 搜索响应时间优化
+- 知识库复制/移动
+- Markdown 渲染完善（代码块高亮）
+- 流式输出打字机效果动画优化
+
+### 4. 工程化
+
+- 文档处理异步化（FastAPI BackgroundTasks）
+- 前端错误边界组件
+- 搜索响应缓存
 
 ## 当前阶段定位
 
 当前版本适合作为：
 
-- 第 5 周阶段性里程碑（RAG 最小闭环）
-- 后续 Week 6 引入 LLM 问答与流式对话的基础版本
+- 第 7 周阶段性里程碑（RAG 系统调优与工程化）
+- 参数可配置、效果可对比、反馈可收集的 AI 问答系统
 - AI 全栈转岗过程中的练习项目
