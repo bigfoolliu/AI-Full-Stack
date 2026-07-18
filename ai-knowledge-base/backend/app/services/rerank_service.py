@@ -13,6 +13,7 @@ class RerankService:
 
     @staticmethod
     def rerank(query: str, chunks: list[dict], top_k: int | None = None) -> list[dict]:
+        """按关键词密度+向量分数融合策略对检索结果重排序。"""
         if not chunks:
             return chunks
 
@@ -37,6 +38,7 @@ class RerankService:
 
     @staticmethod
     def _extract_keywords(text: str) -> list[str]:
+        """提取查询文本中的非停用词作为关键词。"""
         cleaned = re.sub(r"[^\w\u4e00-\u9fff\s]", " ", text)
         tokens = cleaned.split()
         keywords = [t for t in tokens if len(t) > 1]
@@ -44,6 +46,7 @@ class RerankService:
 
 
 def compute_retrieval_metrics(chunks: list[dict], time_ms: float) -> dict:
+    """统计检索命中数、得分分布和耗时。"""
     if not chunks:
         return {
             "total_chunks": 0,

@@ -79,16 +79,19 @@ def _retrieve_context(
 
 
 def _filter_by_threshold(chunks: list[dict], threshold: float) -> list[dict]:
+    """按相似度阈值过滤检索结果，阈值为 0 时不生效。"""
     if threshold <= 0 or not chunks:
         return chunks
     return [c for c in chunks if c.get("score", 1.0) >= threshold]
 
 
 def _format_datetime(dt) -> str:
+    """将 datetime 格式化为字符串。"""
     return dt.strftime("%Y-%m-%d %H:%M:%S")
 
 
 def _build_session_title(messages: list[ChatSessionMessagePayload]) -> str:
+    """用首条用户消息前 40 字作为对话标题。"""
     first_user = next((msg.content.strip() for msg in messages if msg.role == "user" and msg.content.strip()), "")
     if not first_user:
         return "新对话"
@@ -96,6 +99,7 @@ def _build_session_title(messages: list[ChatSessionMessagePayload]) -> str:
 
 
 def _serialize_chat_session(session: ChatSession, messages: list[ChatMessage]) -> dict:
+    """将 ChatSession + 消息列表序列化为前端所需格式。"""
     return {
         "id": session.id,
         "knowledge_base_id": session.knowledge_base_id,
@@ -353,6 +357,7 @@ def get_document_content(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """获取文档内容预览（前 5000 字符）。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -393,6 +398,7 @@ def search_knowledge_base_documents(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """FTS 全文搜索知识库内的文档。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -442,6 +448,7 @@ def search_knowledge_base_semantic(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """语义（向量）搜索知识库内容。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -473,6 +480,7 @@ def chat_with_knowledge_base(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """非流式问答：检索 → LLM 生成 → 返回 answer + sources + metrics。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -515,6 +523,7 @@ def chat_stream_with_knowledge_base(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> StreamingResponse:
+    """流式问答：SSE 事件推送 token / sources / metrics。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -550,6 +559,7 @@ def get_chat_sessions(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """获取知识库下的所有聊天会话（含消息）。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -609,6 +619,7 @@ def save_chat_session(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """保存聊天会话（新增或覆盖已有会话的消息）。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -665,6 +676,7 @@ def submit_chat_feedback(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """提交/更新消息反馈（thumbs_up / thumbs_down）。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -718,6 +730,7 @@ def submit_chat_feedback(
 
 
 def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
+    """将 ORM 对象转为返回 Schema。"""
     return KnowledgeBaseSettingItem(
         id=s.id,
         knowledge_base_id=s.knowledge_base_id,
@@ -736,6 +749,7 @@ def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
 
 
 def _get_or_create_settings(knowledge_base_id: int, db: Session) -> KnowledgeBaseSetting:
+    """获取知识库配置，首次查询时自动创建默认值。"""
     settings = (
         db.query(KnowledgeBaseSetting).filter(KnowledgeBaseSetting.knowledge_base_id == knowledge_base_id).first()
     )
@@ -763,6 +777,7 @@ AVAILABLE_MODELS = [
 def list_models(
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """列出所有可选的大模型。"""
     return ApiResponse(code=0, message="ok", data=AVAILABLE_MODELS)
 
 
@@ -772,6 +787,7 @@ def get_knowledge_base_settings(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """获取知识库配置。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -786,6 +802,7 @@ def update_knowledge_base_settings(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """更新知识库配置（仅更新传入的字段）。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
@@ -822,11 +839,13 @@ def compare_chat_configs(
     db: Session = Depends(get_db),
     _current_user: User = Depends(get_current_user),
 ) -> ApiResponse:
+    """并列运行两组参数配置，返回 A/B 两路回答。"""
     kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
 
     def _run(cfg: CompareConfig, label: str) -> dict:
+        """使用指定参数配置执行一次检索+回答。"""
         svc = VectorService() if EMBEDDING_API_KEY else None
         context_chunks, metrics = [], {}
         if svc:
@@ -853,6 +872,7 @@ def compare_chat_configs(
 
 
 def _status_label(status: str) -> str:
+    """将数据库状态码转为中文标签。"""
     labels = {
         "pending": "待处理",
         "processing": "处理中",

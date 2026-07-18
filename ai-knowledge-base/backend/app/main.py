@@ -14,6 +14,7 @@ from app.core.database import init_db
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """应用启动时初始化数据库，关闭时清理。"""
     init_db()
     yield
 

@@ -4,6 +4,8 @@ from app.core.database import Base
 
 
 class ChatMessage(Base):
+    """聊天消息（角色+内容）。"""
+
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

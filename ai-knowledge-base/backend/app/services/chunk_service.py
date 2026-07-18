@@ -10,6 +10,7 @@ def chunk_text(
     doc_id: int | None = None,
     kb_id: int | None = None,
 ) -> list[dict]:
+    """按固定步长切分文本，支持重叠。"""
     if not text.strip():
         return []
 
@@ -43,6 +44,7 @@ def _make_chunk(
     doc_id: int | None,
     kb_id: int | None,
 ) -> dict:
+    """构造单条 chunk 字典。"""
     return {
         "doc_id": doc_id,
         "kb_id": kb_id,
@@ -60,6 +62,7 @@ def recursive_chunk_text(
     doc_id: int | None = None,
     kb_id: int | None = None,
 ) -> list[dict]:
+    """按段落→句子层次递归切分，优先保留语义完整块。"""
     if not text.strip():
         return []
 

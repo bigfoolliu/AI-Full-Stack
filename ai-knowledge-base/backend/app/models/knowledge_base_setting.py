@@ -4,6 +4,8 @@ from app.core.database import Base
 
 
 class KnowledgeBaseSetting(Base):
+    """知识库可配置参数：检索、Prompt、模型、Hybrid Search、Rerank。"""
+
     __tablename__ = "knowledge_base_settings"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

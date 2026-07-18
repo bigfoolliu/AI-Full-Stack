@@ -8,6 +8,8 @@ from app.core.database import Base
 
 
 class User(Base):
+    """系统用户（登录认证）。"""
+
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -8,6 +8,8 @@ from app.models import Document
 
 @dataclass
 class SearchResultItem:
+    """FTS 搜索单条结果。"""
+
     id: int
     filename: str
     knowledge_base_id: int
@@ -19,6 +21,8 @@ class SearchResultItem:
 
 @dataclass
 class SearchResults:
+    """分页的 FTS 搜索结果集合。"""
+
     items: list[SearchResultItem]
     total: int
     page: int
@@ -59,9 +63,7 @@ def search_documents(
     page: int = 1,
     page_size: int = 10,
 ) -> SearchResults:
-    """
-    根据关键字搜索文档
-    """
+    """根据关键字搜索文档，返回分页结果。"""
 
     search_term = _fts_query(keyword)
 
@@ -123,6 +125,7 @@ LIMIT :limit OFFSET :offset
 
 
 def _fts_query(keyword: str) -> str:
+    """将空格分隔的关键词转换为 FTS5 OR 查询。"""
     parts = keyword.strip().split()
     if not parts:
         return ""

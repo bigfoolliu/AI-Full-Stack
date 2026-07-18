@@ -4,6 +4,8 @@ from app.core.database import Base
 
 
 class ChatFeedback(Base):
+    """聊天反馈（有用/无用）记录。"""
+
     __tablename__ = "chat_feedback"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

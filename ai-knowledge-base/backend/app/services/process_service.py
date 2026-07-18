@@ -11,6 +11,7 @@ from app.services.vector_service import VectorService
 
 
 def process_document(document_id: int, db: Session) -> Document:
+    """解析文档 → 切分 → 向量化 → 建立 FTS 索引的完整处理流程。"""
     doc = db.query(Document).filter(Document.id == document_id).first()
     if not doc:
         raise ValueError(f"文档不存在: {document_id}")

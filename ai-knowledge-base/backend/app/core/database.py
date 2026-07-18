@@ -17,6 +17,7 @@ class Base(DeclarativeBase):
 
 
 def init_db():
+    """初始化所有表、FTS 虚拟表及种子数据。"""
     from app.models import (  # noqa: F401
         Base,
         ChatFeedback,

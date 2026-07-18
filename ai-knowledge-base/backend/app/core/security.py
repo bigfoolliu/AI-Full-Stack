@@ -17,14 +17,17 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """校验明文密码与 bcrypt 哈希是否匹配。"""
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 
 def get_password_hash(password: str) -> str:
+    """使用 bcrypt 对密码进行哈希。"""
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 
 def create_access_token(data: dict) -> str:
+    """生成包含用户 ID 和过期时间的 JWT token。"""
     to_encode = {}
     for k, v in data.items():
         to_encode[k] = str(v) if k == "sub" else v
@@ -34,6 +37,7 @@ def create_access_token(data: dict) -> str:
 
 
 def get_db():
+    """FastAPI 依赖注入：每个请求使用独立数据库会话。"""
     db = SessionLocal()
     try:
         yield db
@@ -45,6 +49,7 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
 ):
+    """解析 JWT token 返回当前用户，无效 token 返回 401。"""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="无效的认证凭据",

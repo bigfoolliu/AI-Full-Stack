@@ -8,6 +8,8 @@ from app.core.database import Base
 
 
 class Document(Base):
+    """上传的文档，记录文件路径与处理状态。"""
+
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

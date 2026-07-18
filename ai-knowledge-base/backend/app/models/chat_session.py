@@ -4,6 +4,8 @@ from app.core.database import Base
 
 
 class ChatSession(Base):
+    """聊天会话（归属某知识库）。"""
+
     __tablename__ = "chat_sessions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

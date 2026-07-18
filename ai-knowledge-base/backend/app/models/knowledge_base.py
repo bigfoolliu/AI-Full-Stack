@@ -8,6 +8,8 @@ from app.core.database import Base
 
 
 class KnowledgeBase(Base):
+    """知识库（文档集合）。"""
+
     __tablename__ = "knowledge_bases"
 
     id = Column(Integer, primary_key=True, autoincrement=True)

@@ -7,6 +7,8 @@ from app.core.config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, MAX_HISTORY_TO
 
 
 class LlmService:
+    """封装 LLM 定时/流式对话及消息组装。"""
+
     def __init__(self):
         self.model = LLM_MODEL
         self.client = (
@@ -28,6 +30,7 @@ class LlmService:
         max_tokens: int | None = None,
         model: str | None = None,
     ) -> dict:
+        """非流式 LLM 对话，返回 answer + sources。"""
         if not self.client:
             return {
                 "answer": "LLM API Key 未配置，无法回答问题。请设置 LLM_API_KEY 或 DASHSCOPE_API_KEY。",
@@ -61,6 +64,7 @@ class LlmService:
         model: str | None = None,
         metrics: dict | None = None,
     ) -> Generator[str, None, None]:
+        """流式生成 SSE 事件：token → sources → metrics → done。"""
         if not self.client:
             yield f"data: {json.dumps({'type': 'token', 'content': 'LLM API Key 未配置，无法回答问题。'})}\n\n"
             yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
@@ -102,6 +106,7 @@ class LlmService:
         history: list[dict] | None = None,
         custom_system_prompt: str | None = None,
     ) -> list[dict]:
+        """构建 system + history + user 消息列表，按 token 预算裁剪历史。"""
         system_prompt = self._build_system_prompt(context_chunks, custom_system_prompt)
         messages: list[dict] = []
         chars_budget = MAX_HISTORY_TOKENS * 4
@@ -125,6 +130,7 @@ class LlmService:
 
     @staticmethod
     def _build_system_prompt(context_chunks: list[dict], custom_prompt: str | None = None) -> str:
+        """将检索上下文追加到系统 prompt 尾部。"""
         base_prompt = (custom_prompt or LlmService.DEFAULT_SYSTEM_PROMPT).strip()
 
         if not context_chunks:

@@ -13,6 +13,8 @@ from app.core.config import (
 
 
 class VectorService:
+    """管理 Qdrant 向量集合：嵌入、检索、混合搜索。"""
+
     def __init__(self, collection_name: str = COLLECTION_NAME):
         self.collection_name = collection_name
         self.embedding_model = EMBEDDING_MODEL
@@ -32,6 +34,7 @@ class VectorService:
             self._ensure_collection()
 
     def _ensure_collection(self):
+        """确保 Qdrant 集合已创建，不存在则新建。"""
         collections = self.qdrant.get_collections().collections
         existing = {c.name for c in collections}
         if self.collection_name not in existing:
@@ -44,6 +47,7 @@ class VectorService:
             )
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        """调用 Embedding API 将文本列表转为向量。"""
         if not self.client:
             raise RuntimeError("DASHSCOPE_API_KEY 未设置，无法生成 Embedding")
         response = self.client.embeddings.create(
@@ -58,6 +62,7 @@ class VectorService:
         filename: str = "",
         status: str = "completed",
     ) -> int:
+        """向量化 chunks 并写入 Qdrant，同时记录 payload 元信息。"""
         texts = [c["content"] for c in chunks]
         vectors = self.embed_texts(texts)
 
@@ -94,6 +99,7 @@ class VectorService:
         limit: int = 10,
         filename: str | None = None,
     ) -> list[dict]:
+        """向量相似度搜索，支持 kb_id / filename 过滤。"""
         query_vector = self.embed_texts([query])[0]
 
         from qdrant_client.models import FieldCondition, Filter, MatchValue
@@ -134,6 +140,7 @@ class VectorService:
         alpha: float = 0.3,
         filename: str | None = None,
     ) -> list[dict]:
+        """向量搜索 + FTS 关键词搜索，按 alpha 权重融合排序。"""
         from sqlalchemy import text
 
         from app.core.database import SessionLocal
@@ -182,6 +189,7 @@ LIMIT :limit
         alpha: float = 0.3,
         limit: int = 10,
     ) -> list[dict]:
+        """归一化向量分与 FTS 分后按 alpha 加权融合。"""
         doc_id_to_source: dict[int, dict] = {}
         seen_doc_ids: set[int] = set()
 
@@ -216,6 +224,7 @@ LIMIT :limit
         return merged[:limit]
 
     def delete_document_chunks(self, doc_id: int):
+        """从 Qdrant 中删除指定文档的所有向量块。"""
         from qdrant_client.models import FieldCondition, Filter, MatchValue
 
         self.qdrant.delete(

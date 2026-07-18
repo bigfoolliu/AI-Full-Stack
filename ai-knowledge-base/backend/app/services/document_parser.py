@@ -3,6 +3,7 @@ from docx import Document as DocxDocument
 
 
 def parse_document(file_path: str, file_type: str) -> str:
+    """按文件类型（pdf/docx/txt）分发到对应解析函数。"""
     ext = file_type.lower()
 
     if ext == "pdf":
@@ -39,6 +40,7 @@ def _parse_pdf(file_path: str) -> str:
 
 
 def _parse_docx(file_path: str) -> str:
+    """解析 .docx 文件，拼接所有段落文本。"""
     try:
         doc = DocxDocument(file_path)
         paragraphs = []
