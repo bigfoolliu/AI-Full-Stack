@@ -151,27 +151,117 @@
 - PDF/TXT 上传后自动解析，状态从"解析中"流转到"已完成"或"解析失败"
 - 文档内容搜索已联调 `GET /api/knowledge-bases/{id}/search`，支持关键词 + 状态联合筛选 + 分页
 
+## 架构图
+
+```mermaid
+graph TB
+    subgraph 用户端
+        Browser["浏览器"]
+    end
+
+    subgraph 前端["Frontend (Docker)"]
+        Nginx["Nginx (alpine)
+                端口 8080
+                SPA 路由 / API 反向代理"]
+        VueApp["Vue 3 + TypeScript
+                Element Plus UI
+                Pinia 状态管理
+                Axios HTTP 客户端"]
+    end
+
+    subgraph 后端["Backend (Docker)"]
+        FastAPI["FastAPI (Uvicorn)
+                 端口 8000
+                 SSE 流式输出
+                 JWT 认证"]
+        Process["process_service
+                 文档解析(PDF/DOCX/TXT)
+                 Chunk 切分
+                 Embedding → Qdrant"]
+        RAG["RAG Pipeline
+             检索 → 上下文组装 → LLM"]
+    end
+
+    subgraph 数据层["Data Layer (Docker)"]
+        SQLite[("SQLite (默认)
+                 知识库/文档/会话/反馈")]
+        PG[("PostgreSQL 16 (可选)
+             通过 DATABASE_URL 切换")]
+        Qdrant[("Qdrant
+                 向量数据库
+                 语义搜索")]
+        Redis[("Redis 7
+                搜索缓存 5min
+                会话缓存 30s")]
+    end
+
+    subgraph AI服务["AI Services (外部)"]
+        LLM["DashScope Qwen API
+              LLM 对话"]
+        Embedding["DashScope
+                    text-embedding-v3
+                    1024 维"]
+    end
+
+    Browser -->|"http://localhost:8080"| Nginx
+    Nginx -->|"/api/* 代理"| FastAPI
+    Nginx -->|"静态资源"| VueApp
+    FastAPI --> SQLite
+    FastAPI --> PG
+    FastAPI --> Qdrant
+    FastAPI --> Redis
+    FastAPI --> Process
+    FastAPI --> RAG
+    Process -->|"向量化"| Embedding
+    Process -->|"存储"| Qdrant
+    RAG -->|"检索"| Qdrant
+    RAG -->|"生成回答"| LLM
+```
+
 ## 项目目录结构
 
 ```text
 ai-knowledge-base/
-  frontend/   # Vue 3 前端项目
-  backend/    # FastAPI 后端项目
-  docs/       # 设计文档与执行计划
-  README.md   # 项目总说明
+  frontend/          # Vue 3 前端项目
+    Dockerfile       # 多阶段构建 (node:22 → nginx:alpine)
+    nginx.conf       # SPA + /api + /uploads 反向代理
+    .dockerignore
+    src/
+      views/         # 10 个业务页面
+      api/           # Axios 接口封装（含错误拦截器）
+      router/        # 路由配置 + 守卫
+      stores/        # Pinia 状态管理
+      components/    # ErrorBoundary, EmptyState 等通用组件
+      utils/         # toast.ts 封装 ElMessage/ElNotification
+  backend/           # FastAPI 后端项目
+    Dockerfile       # uv-based 构建 (python3.13-slim)
+    .dockerignore
+    app/
+      api/routes/    # FastAPI 路由模块
+      schemas/       # Pydantic 校验模型
+      models/        # SQLAlchemy ORM 模型
+      services/      # 文档解析、Chunk、向量、检索、Rerank
+      core/          # 配置、数据库引擎、安全、Redis 客户端
+    scripts/         # 测试脚本
+  docs/              # 设计文档与执行计划
+    architecture.md  # 架构说明
+  docker-compose.yml # 全服务编排 (frontend+backend+qdrant+redis+pg)
+  .env.example       # 环境变量模板
+  README.md          # 项目总说明
 ```
 
 ### 说明
 
-- `frontend/src/views/` — 6 个 Element Plus 业务页面
-- `frontend/src/api/` — 后端接口封装
+- `frontend/src/views/` — 10 个 Element Plus 业务页面
+- `frontend/src/api/` — 后端接口封装（请求拦截器注入 JWT，响应拦截器统一处理 401/403/404/500）
 - `frontend/src/router/` — 路由 + 守卫
 - `frontend/src/stores/` — Pinia 状态管理
+- `frontend/src/components/` — ErrorBoundary（全局错误兜底）、EmptyState（空状态引导）
 - `backend/app/api/routes/` — FastAPI 路由
 - `backend/app/schemas/` — Pydantic 数据模型
 - `backend/app/models/` — SQLAlchemy ORM 模型
-- `backend/app/services/` — 文档解析 + 全文搜索
-- `backend/app/core/` — 配置、数据库引擎、安全模块
+- `backend/app/services/` — 文档解析 + Chunk 切分 + 向量化 + 检索 + Rerank + 文档处理
+- `backend/app/core/` — 配置、数据库引擎、安全模块、Redis 缓存客户端
 
 以下目录主要属于本地开发环境产物，不是项目核心成果本身：
 
@@ -182,23 +272,128 @@ ai-knowledge-base/
 - `__pycache__/`
 - `uploads/`
 
-## 本地启动方式
+## 容器化启动方式
 
-### 启动后端
+### 前提条件
+
+- Docker 24+
+- Docker Compose v2+
+
+### 快速启动（推荐）
 
 ```bash
-cd backend
-uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# 克隆项目
+git clone <repo-url> && cd ai-knowledge-base
+
+# 可选：配置环境变量
+cp .env.example .env
+# 编辑 .env，至少设置 DASHSCOPE_API_KEY
+
+# 一键启动所有服务
+docker compose up -d
+
+# 访问 http://localhost:8080
 ```
 
-### 启动前端
+启动后的服务：
+
+| 服务 | 地址 | 说明 |
+|------|------|------|
+| 前端 | http://localhost:8080 | Nginx 反向代理 |
+| 后端 | http://localhost:8000 | FastAPI /health |
+| Qdrant | localhost:6333 | 向量数据库 |
+| Redis | localhost:6379 | 缓存层 |
+
+> 默认使用 SQLite 数据库，如需 PostgreSQL 请运行：
+> ```bash
+> docker compose --profile postgres up -d
+> ```
+> 并在 `.env` 中设置 `DATABASE_URL=postgresql://kbuser:kbpass@db:5432/knowledge_base`
+
+### 本地开发模式
 
 ```bash
+# 启动依赖服务（Qdrant + Redis）
+docker compose up -d qdrant redis
+
+# 启动后端（热重载）
+cd backend
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 启动前端（热重载）
 cd frontend
 npm run dev
 ```
 
-后端默认运行在 `http://127.0.0.1:8000`，前端在 `http://localhost:5173`。
+后端默认运行在 `http://127.0.0.1:8000`，前端在 `http://localhost:5173`。API 通过 Vite proxy 转发到后端。
+
+### 环境变量说明
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `DASHSCOPE_API_KEY` | — | DashScope API 密钥（必填） |
+| `JWT_SECRET` | `super-secret-key-change-in-production` | JWT 签名密钥 |
+| `DATABASE_URL` | `sqlite:///{BASE_DIR}/knowledge_base.db` | 数据库连接串（Docker 默认 `/app/data/knowledge_base.db`） |
+| `QDRANT_URL` | `http://localhost:6333` | Qdrant 服务地址 |
+| `REDIS_URL` | — | Redis 连接串（空=不使用缓存） |
+| `CACHE_ENABLED` | `true` | 是否启用 Redis 缓存 |
+| `LLM_API_KEY` | 同 `DASHSCOPE_API_KEY` | 大模型 API Key |
+| `LLM_BASE_URL` | `https://dashscope.aliyuncs.com/compatible-mode/v1` | 大模型接口地址 |
+| `LLM_MODEL` | `qwen-plus` | 大模型名称 |
+| `EMBEDDING_MODEL` | `text-embedding-v3` | Embedding 模型名称 |
+| `EMBEDDING_DIMENSION` | `1024` | 向量维度 |
+| `COLLECTION_NAME` | `document_chunks` | Qdrant collection 名称 |
+
+## 第 8 周接口清单
+
+第 8 周新增以下接口：
+
+1. `DELETE /api/knowledge-bases/{id}/chat/sessions/{session_id}` — 删除会话（级联删除消息和反馈）
+2. `PUT /api/knowledge-bases/{id}/chat/sessions/{session_id}` — 重命名会话
+
+现有接口变更：
+
+- `GET/PUT /api/knowledge-bases/{id}/settings` — 增加 chunk_size、overlap、chunk_strategy 字段
+
+## 第 8 周页面清单
+
+| 页面 | 路径 | 变更 |
+|------|------|------|
+| 知识库设置页 | `/knowledge-bases/:id/settings` | 新增 Chunk 参数配置（chunk_size 滑块 128-2048、overlap 滑块 0-512、chunk_strategy 单选） |
+| Chat 对话页 | `/knowledge-bases/:id/chat` | 新增会话删除（hover 显示 × 按钮 + 二次确认）、会话双击重命名 |
+| 全局 | — | ErrorBoundary 全局错误兜底、EmptyState 空状态引导、axios 拦截器统一错误处理 |
+
+## 第 8 周完成内容总结
+
+- **Chunk 策略页面可配**：chunk_size（128-2048，步长 128）、overlap（0-512，步长 32）、chunk_strategy（fixed / recursive）可在设置页调整，文档处理时实时读取，存量文档不受影响
+- **会话管理完善**：支持删除（级联清理消息/反馈）和双击重命名，当前会话被删除后自动切换到最新会话或新建
+- **前端错误边界**：ErrorBoundary 组件覆盖所有路由页面，axios 响应拦截器统一处理 401/403/404/500，401 自动跳转登录页，EmptyState 覆盖无知识库/无文档/无会话等场景，所有页面完善 loading 状态
+- **全容器化部署**：前端 Nginx 多阶段构建（node:22 → nginx:alpine），后端 uv-based 构建（python3.13-slim），docker-compose.yml 编排 5 个服务（frontend + backend + qdrant + redis + postgres），Nginx 代理 /api 和 /uploads，Vue Router history 模式兼容
+- **Redis 缓存层**：Redis 7 容器化部署，连接池封装（redis_client.py），FTS 搜索缓存 5 分钟、语义搜索缓存 5 分钟、会话列表缓存 30 秒，文档处理完成后自动失效缓存，`CACHE_ENABLED` 环境变量控制开关
+
+第 8 周的项目从 **「RAG 系统调优与工程化阶段」** 推进到 **「第一版可交付作品」**。
+
+## 下周计划（Week 9）：项目 2 — AI 工单 Copilot
+
+### 项目背景
+
+从第 9 周开始，启动全新项目 2《AI 工单 Copilot》，不再扩展知识库项目（项目 1）。
+
+核心方向：一个**面向企业内部客服/运维的工单智能助手**，聚焦工具链和引擎能力而非 RAG 调优。
+
+### 初步规划
+
+- **工单系统**：工单创建、流转、状态管理、优先级分配
+- **AI 辅助**：工单内容摘要、自动分类、相似工单推荐、回复建议
+- **数据看板**：工单统计、处理时长、满意度分析
+- **多 Agent 协作**：每个工单对应一个协作者 Agent，自动关联知识库条目
+- **技术栈**：沿用 Vue 3 + FastAPI（项目 1 沉淀的骨架），新增 Celery / RabbitMQ 或类似任务队列
+
+### 预计范围
+
+- 3-4 个核心页面（工单列表、工单详情、工单创建、数据看板）
+- 10-15 个 API 接口（CRUD + 统计 + AI 能力）
+- 与项目 1 的关系：独立代码库，复用项目 1 的前端脚手架和后端基础组件
 
 ## 第 4 周接口清单
 
@@ -354,36 +549,14 @@ npm run dev
 
 第 6 周的项目已经从 **「RAG 最小闭环」**推进到 **「AI 应用工程：对话与推理阶段」**。
 
-## 下周计划（Week 8）
-
-### 1. Chunk 策略可配置
-
-- `knowledge_base_settings` 增加 `chunk_size`、`overlap`、`chunk_strategy` 字段
-- 设置页增加 Chunk 参数配置区域
-- 文档处理流程读取配置的 Chunk 参数
-
-### 2. 会话管理完善
-
-- 会话删除（`DELETE /api/.../sessions/{id}`）
-- 会话重命名（双击标题或右键菜单）
-- 会话与用户关联（`chat_sessions` 增加 `user_id`）
-
-### 3. 交互体验优化
-
-- 知识库复制/移动
-- Markdown 渲染完善（代码块高亮）
-- 流式输出打字机效果动画优化
-
-### 4. 工程化
-
-- 文档处理异步化（FastAPI BackgroundTasks）
-- 前端错误边界组件
-- 搜索响应缓存
-
 ## 当前阶段定位
 
-当前版本适合作为：
+当前版本（第 8 周里程碑）适合作为：
 
-- 第 7 周阶段性里程碑（RAG 系统调优与工程化）
-- 参数可配置、效果可对比、反馈可收集的 AI 问答系统
-- AI 全栈转岗过程中的练习项目
+- **可交付的作品集项目**：`git clone && docker-compose up` 一键启动全栈服务
+- **RAG 知识库问答系统**：支持文档解析、Chunk 切分、向量检索、关键词搜索、Hybrid Search、Rerank、流式对话
+- **参数全量可配置**：检索、Prompt、模型、Chunk 策略、Hybrid Search、Rerank 全部页面可调
+- **效果可对比**：A/B 双栏对比不同配置下的回答效果，反馈数据可收集
+- **工程完整**：容器化部署、Redis 缓存、错误边界、空状态引导、JWT 认证
+
+> 第 9 周起启动项目 2《AI 工单 Copilot》，切换到全新业务领域。
