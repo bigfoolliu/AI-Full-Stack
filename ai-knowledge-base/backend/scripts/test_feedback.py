@@ -14,19 +14,24 @@ client = TestClient(app)
 
 def _setup_test_data():
     db = SessionLocal()
-    try:
-        existing = db.query(ChatSession).filter(ChatSession.knowledge_base_id == 999).first()
-        if existing:
-            return existing.id
+    existing = db.query(ChatSession).filter(ChatSession.knowledge_base_id == 999).first()
+    if existing:
+        msg = db.query(ChatMessage).filter(ChatMessage.session_id == existing.id).first()
+        db.close()
+        if msg:
+            return existing.id, msg.id
+    else:
         session = ChatSession(knowledge_base_id=999, title="测试会话")
         db.add(session)
         db.flush()
         msg = ChatMessage(session_id=session.id, role="assistant", content="test reply")
         db.add(msg)
         db.commit()
-        return session.id, msg.id
-    finally:
+        sid, mid = session.id, msg.id
         db.close()
+        return sid, mid
+    db.close()
+    return None, None
 
 
 def _login():

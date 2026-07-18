@@ -349,6 +349,9 @@ onMounted(async () => {
       </div>
       <div class="chat-header__actions">
         <el-button size="small" @click="newChat">新对话</el-button>
+        <el-button size="small" @click="router.push(`/knowledge-bases/${knowledgeBaseId}/compare`)"
+          >效果对比</el-button
+        >
         <el-button size="small" @click="goToDocuments">返回文档列表</el-button>
       </div>
     </header>

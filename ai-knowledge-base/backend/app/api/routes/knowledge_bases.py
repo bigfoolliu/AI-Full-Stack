@@ -18,6 +18,8 @@ from app.schemas.knowledge_base import (
     ChatFeedbackRequest,
     ChatRequest,
     ChatSessionMessagePayload,
+    CompareConfig,
+    CompareRequest,
     CreateKnowledgeBaseRequest,
     KnowledgeBaseItem,
     KnowledgeBaseSettingItem,
@@ -27,10 +29,53 @@ from app.schemas.knowledge_base import (
 )
 from app.services.llm_service import LlmService
 from app.services.process_service import process_document
+from app.services.rerank_service import RerankService, compute_retrieval_metrics
 from app.services.search_service import search_documents
 from app.services.vector_service import VectorService
 
 router = APIRouter(prefix="/api", tags=["knowledge-bases"])
+
+
+def _retrieve_context(
+    query: str,
+    kb_id: int,
+    settings: KnowledgeBaseSetting,
+    vector_service: VectorService,
+    filename: str | None = None,
+) -> tuple[list[dict], dict]:
+    """
+    统一的检索逻辑：混合/向量搜索 → 阈值过滤 → 重排序 → 计算指标
+    返回 (chunks, metrics)
+    """
+    t0 = time.time()
+    context_chunks = []
+    try:
+        if settings.hybrid_search:
+            context_chunks = vector_service.hybrid_search(
+                query=query,
+                kb_id=kb_id,
+                limit=settings.top_k * 3 if settings.rerank_enabled else settings.top_k,
+                alpha=settings.hybrid_alpha,
+                filename=filename,
+            )
+        else:
+            context_chunks = vector_service.search(
+                query=query,
+                kb_id=kb_id,
+                limit=settings.top_k * 3 if settings.rerank_enabled else settings.top_k,
+                filename=filename,
+            )
+    except RuntimeError:
+        pass
+
+    context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
+    elapsed = (time.time() - t0) * 1000
+
+    if settings.rerank_enabled and context_chunks:
+        context_chunks = RerankService.rerank(query, context_chunks, top_k=settings.top_k)
+
+    metrics = compute_retrieval_metrics(context_chunks, elapsed)
+    return context_chunks, metrics
 
 
 def _filter_by_threshold(chunks: list[dict], threshold: float) -> list[dict]:
@@ -408,12 +453,15 @@ def search_knowledge_base_semantic(
             data=[],
         )
 
-    settings = _get_or_create_settings(knowledge_base_id, db)
     svc = VectorService()
-    top_k = req.top_k or settings.top_k
     filename = req.filter.filename if req.filter else None
-
-    results = svc.search(query=req.query, kb_id=knowledge_base_id, limit=top_k, filename=filename)
+    results, _ = _retrieve_context(
+        req.query,
+        knowledge_base_id,
+        _get_or_create_settings(knowledge_base_id, db),
+        svc,
+        filename,
+    )
 
     return ApiResponse(code=0, message="ok", data=results)
 
@@ -432,28 +480,11 @@ def chat_with_knowledge_base(
     settings = _get_or_create_settings(knowledge_base_id, db)
 
     context_chunks = []
+    metrics = {}
     if EMBEDDING_API_KEY:
         svc = VectorService()
-        try:
-            filename = req.filter.filename if req.filter else None
-            if settings.hybrid_search:
-                context_chunks = svc.hybrid_search(
-                    query=req.query,
-                    kb_id=knowledge_base_id,
-                    limit=settings.top_k,
-                    alpha=settings.hybrid_alpha,
-                    filename=filename,
-                )
-            else:
-                context_chunks = svc.search(
-                    query=req.query,
-                    kb_id=knowledge_base_id,
-                    limit=settings.top_k,
-                    filename=filename,
-                )
-            context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
-        except RuntimeError:
-            pass
+        filename = req.filter.filename if req.filter else None
+        context_chunks, metrics = _retrieve_context(req.query, knowledge_base_id, settings, svc, filename)
 
     llm = LlmService()
     result = llm.chat(
@@ -472,6 +503,7 @@ def chat_with_knowledge_base(
         data={
             "answer": result["answer"],
             "sources": result["sources"],
+            "metrics": metrics,
         },
     )
 
@@ -490,28 +522,11 @@ def chat_stream_with_knowledge_base(
     settings = _get_or_create_settings(knowledge_base_id, db)
 
     context_chunks = []
+    metrics = {}
     if EMBEDDING_API_KEY:
         svc = VectorService()
-        try:
-            filename = req.filter.filename if req.filter else None
-            if settings.hybrid_search:
-                context_chunks = svc.hybrid_search(
-                    query=req.query,
-                    kb_id=knowledge_base_id,
-                    limit=settings.top_k,
-                    alpha=settings.hybrid_alpha,
-                    filename=filename,
-                )
-            else:
-                context_chunks = svc.search(
-                    query=req.query,
-                    kb_id=knowledge_base_id,
-                    limit=settings.top_k,
-                    filename=filename,
-                )
-            context_chunks = _filter_by_threshold(context_chunks, settings.similarity_threshold)
-        except RuntimeError:
-            pass
+        filename = req.filter.filename if req.filter else None
+        context_chunks, metrics = _retrieve_context(req.query, knowledge_base_id, settings, svc, filename)
 
     llm = LlmService()
     return StreamingResponse(
@@ -523,6 +538,7 @@ def chat_stream_with_knowledge_base(
             temperature=settings.temperature,
             max_tokens=settings.max_tokens,
             model=settings.model_name,
+            metrics=metrics,
         ),
         media_type="text/event-stream",
     )
@@ -713,6 +729,8 @@ def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
         model_name=s.model_name,
         hybrid_search=s.hybrid_search,
         hybrid_alpha=s.hybrid_alpha,
+        rerank_enabled=s.rerank_enabled,
+        rerank_top_k=s.rerank_top_k,
         updated_at=_format_datetime(s.updated_at) if s.updated_at else "",
     )
 
@@ -788,9 +806,50 @@ def update_knowledge_base_settings(
         settings.hybrid_search = payload.hybrid_search
     if payload.hybrid_alpha is not None:
         settings.hybrid_alpha = payload.hybrid_alpha
+    if payload.rerank_enabled is not None:
+        settings.rerank_enabled = payload.rerank_enabled
+    if payload.rerank_top_k is not None:
+        settings.rerank_top_k = payload.rerank_top_k
     db.commit()
     db.refresh(settings)
     return ApiResponse(code=0, message="ok", data=_serialize_settings(settings).model_dump())
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/chat/compare", response_model=ApiResponse)
+def compare_chat_configs(
+    knowledge_base_id: int,
+    req: CompareRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    def _run(cfg: CompareConfig, label: str) -> dict:
+        svc = VectorService() if EMBEDDING_API_KEY else None
+        context_chunks, metrics = [], {}
+        if svc:
+            override = _get_or_create_settings(knowledge_base_id, db)
+            override.top_k = cfg.top_k
+            override.similarity_threshold = cfg.similarity_threshold
+            override.hybrid_search = cfg.hybrid_search
+            override.hybrid_alpha = cfg.hybrid_alpha
+            override.rerank_enabled = cfg.rerank_enabled
+            override.rerank_top_k = cfg.rerank_top_k
+
+            context_chunks, metrics = _retrieve_context(req.query, knowledge_base_id, override, svc)
+
+        llm = LlmService()
+        result = llm.chat(
+            query=req.query,
+            context_chunks=context_chunks,
+            system_prompt=cfg.system_prompt,
+            temperature=cfg.temperature,
+        )
+        return {"label": label, "answer": result["answer"], "sources": result["sources"], "metrics": metrics}
+
+    return ApiResponse(code=0, message="ok", data=[_run(req.config_a, "配置 A"), _run(req.config_b, "配置 B")])
 
 
 def _status_label(status: str) -> str:

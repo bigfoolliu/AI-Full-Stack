@@ -246,6 +246,8 @@ export interface KnowledgeBaseSettingItem {
   model_name: string | null;
   hybrid_search: boolean;
   hybrid_alpha: number;
+  rerank_enabled: boolean;
+  rerank_top_k: number;
   updated_at: string;
 }
 
@@ -263,6 +265,8 @@ export interface UpdateKnowledgeBaseSettingPayload {
   model_name?: string | null;
   hybrid_search?: boolean;
   hybrid_alpha?: number;
+  rerank_enabled?: boolean;
+  rerank_top_k?: number;
 }
 
 export const listModels = async () => {

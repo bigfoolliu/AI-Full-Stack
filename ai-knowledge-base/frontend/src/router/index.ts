@@ -10,6 +10,7 @@ import KnowledgeBaseDocumentsView from "../views/KnowledgeBaseDocumentsView.vue"
 import KnowledgeBaseSettingsView from "../views/KnowledgeBaseSettingsView.vue";
 import KnowledgeBaseUploadView from "../views/KnowledgeBaseUploadView.vue";
 import ChatView from "../views/ChatView.vue";
+import ComparisonView from "../views/ComparisonView.vue";
 import { useUserStore } from "../stores/user";
 
 const routes = [
@@ -49,6 +50,11 @@ const routes = [
   {
     path: "/knowledge-bases/:id/chat",
     component: ChatView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: "/knowledge-bases/:id/compare",
+    component: ComparisonView,
     meta: { requiresAuth: true },
   },
 ];

@@ -59,10 +59,13 @@ class LlmService:
         temperature: float | None = None,
         max_tokens: int | None = None,
         model: str | None = None,
+        metrics: dict | None = None,
     ) -> Generator[str, None, None]:
         if not self.client:
             yield f"data: {json.dumps({'type': 'token', 'content': 'LLM API Key 未配置，无法回答问题。'})}\n\n"
             yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
+            if metrics:
+                yield f"data: {json.dumps({'type': 'metrics', 'data': metrics})}\n\n"
             yield f"data: {json.dumps({'type': 'done'})}\n\n"
             return
 
@@ -82,6 +85,8 @@ class LlmService:
                 yield f"data: {json.dumps({'type': 'token', 'content': delta.content})}\n\n"
 
         yield f"data: {json.dumps({'type': 'sources', 'data': context_chunks})}\n\n"
+        if metrics:
+            yield f"data: {json.dumps({'type': 'metrics', 'data': metrics})}\n\n"
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
 
     DEFAULT_SYSTEM_PROMPT = (

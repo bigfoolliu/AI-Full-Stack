@@ -53,6 +53,8 @@ class KnowledgeBaseSettingItem(BaseModel):
     model_name: str | None = None
     hybrid_search: bool
     hybrid_alpha: float
+    rerank_enabled: bool
+    rerank_top_k: int
     updated_at: str
 
 
@@ -65,6 +67,8 @@ class UpdateKnowledgeBaseSettingRequest(BaseModel):
     model_name: str | None = None
     hybrid_search: bool | None = None
     hybrid_alpha: float | None = None
+    rerank_enabled: bool | None = None
+    rerank_top_k: int | None = None
 
 
 class ChatFeedbackRequest(BaseModel):
@@ -72,3 +76,20 @@ class ChatFeedbackRequest(BaseModel):
     message_id: int
     feedback: str
     comment: str | None = None
+
+
+class CompareConfig(BaseModel):
+    top_k: int = 5
+    similarity_threshold: float = 0.0
+    hybrid_search: bool = False
+    hybrid_alpha: float = 0.3
+    rerank_enabled: bool = False
+    rerank_top_k: int = 5
+    temperature: float = 0.7
+    system_prompt: str | None = None
+
+
+class CompareRequest(BaseModel):
+    query: str
+    config_a: CompareConfig
+    config_b: CompareConfig

@@ -16,4 +16,6 @@ class KnowledgeBaseSetting(Base):
     model_name = Column(String(64), nullable=True)
     hybrid_search = Column(Boolean, nullable=False, default=False)
     hybrid_alpha = Column(Float, nullable=False, default=0.3)
+    rerank_enabled = Column(Boolean, nullable=False, default=False)
+    rerank_top_k = Column(Integer, nullable=False, default=5)
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

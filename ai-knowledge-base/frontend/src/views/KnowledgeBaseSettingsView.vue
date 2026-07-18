@@ -28,6 +28,8 @@ const modelName = ref('');
 const models = ref<ModelOption[]>([]);
 const hybridSearch = ref(false);
 const hybridAlpha = ref(0.3);
+const rerankEnabled = ref(false);
+const rerankTopK = ref(5);
 
 const DEFAULT_SYSTEM_PROMPT = `你是一个知识库问答助手。
 请基于以下检索到的文档内容回答用户的问题。
@@ -56,6 +58,8 @@ const loadSettings = async () => {
     models.value = modelsRes.data;
     hybridSearch.value = res.data.hybrid_search;
     hybridAlpha.value = res.data.hybrid_alpha;
+    rerankEnabled.value = res.data.rerank_enabled;
+    rerankTopK.value = res.data.rerank_top_k;
   } catch {
     ElMessage.error('加载设置失败');
   } finally {
@@ -75,6 +79,8 @@ const saveSettings = async () => {
       model_name: modelName.value || null,
       hybrid_search: hybridSearch.value,
       hybrid_alpha: hybridAlpha.value,
+      rerank_enabled: rerankEnabled.value,
+      rerank_top_k: rerankTopK.value,
     });
     ElMessage.success('设置已保存');
   } catch {
@@ -206,6 +212,34 @@ onMounted(loadSettings);
           </div>
           <p class="kb-settings-page__hint">
             控制语义搜索结果的权重比例。Alpha = 1 时仅使用语义检索，= 0 时仅使用关键词。
+          </p>
+        </el-form-item>
+
+        <el-divider />
+
+        <h3 class="kb-settings-page__section-title">重排序（Rerank）</h3>
+
+        <el-form-item label="Rerank">
+          <el-switch v-model="rerankEnabled" />
+          <p class="kb-settings-page__hint">
+            开启后对检索结果做二次排序，基于查询关键词命中密度与向量得分融合，提升最终相关性。
+          </p>
+        </el-form-item>
+
+        <el-form-item label="Rerank Top-k" v-if="rerankEnabled">
+          <div class="kb-settings-page__slider-row">
+            <el-slider
+              v-model="rerankTopK"
+              :min="1"
+              :max="10"
+              :step="1"
+              show-stops
+              style="width: 300px"
+            />
+            <span class="kb-settings-page__value">{{ rerankTopK }}</span>
+          </div>
+          <p class="kb-settings-page__hint">
+            重排序后最终返回的结果数。首次检索会取更多候选，再由 Rerank 精排到该数量。
           </p>
         </el-form-item>
 
