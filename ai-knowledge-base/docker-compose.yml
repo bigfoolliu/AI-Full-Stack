@@ -27,7 +27,7 @@ services:
         condition: service_started
     volumes:
       - backend-uploads:/app/uploads
-      - backend-data:/app
+      - backend-data:/app/data
     <<: *common-net
 
   qdrant:

@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
+from app.core.config import SEARCH_CACHE_TTL
+from app.core.redis_client import _hash_key, cache_get, cache_set
 from app.models import Document
 
 
@@ -65,6 +67,16 @@ def search_documents(
 ) -> SearchResults:
     """根据关键字搜索文档，返回分页结果。"""
 
+    cache_key = _hash_key("search", kb_id, keyword.strip().lower(), status or "", page, page_size)
+    cached = cache_get(cache_key)
+    if cached:
+        return SearchResults(
+            items=[SearchResultItem(**item) for item in cached["items"]],
+            total=cached["total"],
+            page=cached["page"],
+            page_size=cached["page_size"],
+        )
+
     search_term = _fts_query(keyword)
 
     status_filter = ""
@@ -121,7 +133,31 @@ LIMIT :limit OFFSET :offset
         for row in rows
     ]
 
-    return SearchResults(items=items, total=total, page=page, page_size=page_size)
+    result = SearchResults(items=items, total=total, page=page, page_size=page_size)
+
+    cache_set(
+        cache_key,
+        {
+            "items": [
+                {
+                    "id": item.id,
+                    "filename": item.filename,
+                    "knowledge_base_id": item.knowledge_base_id,
+                    "status": item.status,
+                    "snippet": item.snippet,
+                    "score": item.score,
+                    "created_at": item.created_at,
+                }
+                for item in items
+            ],
+            "total": total,
+            "page": page,
+            "page_size": page_size,
+        },
+        ttl=SEARCH_CACHE_TTL,
+    )
+
+    return result
 
 
 def _fts_query(keyword: str) -> str:

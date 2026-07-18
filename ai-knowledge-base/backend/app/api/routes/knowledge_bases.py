@@ -10,7 +10,8 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
+from app.core.config import EMBEDDING_API_KEY, SEARCH_CACHE_TTL, SESSION_CACHE_TTL, UPLOAD_DIR
+from app.core.redis_client import _hash_key, cache_delete_pattern, cache_get, cache_set
 from app.core.security import get_current_user, get_db
 from app.models import ChatFeedback, ChatMessage, ChatSession, Document, KnowledgeBase, KnowledgeBaseSetting, User
 from app.schemas.common import ApiResponse, PaginatedData
@@ -47,6 +48,19 @@ def _retrieve_context(
     统一的检索逻辑：混合/向量搜索 → 阈值过滤 → 重排序 → 计算指标
     返回 (chunks, metrics)
     """
+    cache_key = _hash_key(
+        "semantic",
+        kb_id,
+        query.strip().lower(),
+        filename or "",
+        settings.top_k,
+        settings.hybrid_search,
+        settings.hybrid_alpha,
+    )
+    cached = cache_get(cache_key)
+    if cached:
+        return cached["chunks"], cached["metrics"]
+
     t0 = time.time()
     context_chunks = []
     try:
@@ -75,6 +89,9 @@ def _retrieve_context(
         context_chunks = RerankService.rerank(query, context_chunks, top_k=settings.top_k)
 
     metrics = compute_retrieval_metrics(context_chunks, elapsed)
+
+    cache_set(cache_key, {"chunks": context_chunks, "metrics": metrics}, ttl=SEARCH_CACHE_TTL)
+
     return context_chunks, metrics
 
 
@@ -564,6 +581,11 @@ def get_chat_sessions(
     if not kb:
         raise HTTPException(status_code=404, detail="知识库不存在")
 
+    cache_key = _hash_key("sessions", knowledge_base_id)
+    cached = cache_get(cache_key)
+    if cached:
+        return ApiResponse(code=0, message="ok", data=cached)
+
     sessions = (
         db.query(ChatSession)
         .filter(ChatSession.knowledge_base_id == knowledge_base_id)
@@ -584,32 +606,32 @@ def get_chat_sessions(
         latest = sessions[0]
         active_session = _serialize_chat_session(latest, message_map.get(latest.id, []))
 
-    return ApiResponse(
-        code=0,
-        message="ok",
-        data={
-            "items": [
-                {
-                    "id": session.id,
-                    "knowledge_base_id": session.knowledge_base_id,
-                    "title": session.title,
-                    "created_at": _format_datetime(session.created_at),
-                    "updated_at": _format_datetime(session.updated_at or session.created_at),
-                    "messages": [
-                        {
-                            "id": message.id,
-                            "role": message.role,
-                            "content": message.content,
-                            "created_at": _format_datetime(message.created_at),
-                        }
-                        for message in message_map.get(session.id, [])
-                    ],
-                }
-                for session in sessions
-            ],
-            "active_session": active_session,
-        },
-    )
+    data = {
+        "items": [
+            {
+                "id": session.id,
+                "knowledge_base_id": session.knowledge_base_id,
+                "title": session.title,
+                "created_at": _format_datetime(session.created_at),
+                "updated_at": _format_datetime(session.updated_at or session.created_at),
+                "messages": [
+                    {
+                        "id": message.id,
+                        "role": message.role,
+                        "content": message.content,
+                        "created_at": _format_datetime(message.created_at),
+                    }
+                    for message in message_map.get(session.id, [])
+                ],
+            }
+            for session in sessions
+        ],
+        "active_session": active_session,
+    }
+
+    cache_set(cache_key, data, ttl=SESSION_CACHE_TTL)
+
+    return ApiResponse(code=0, message="ok", data=data)
 
 
 @router.post("/knowledge-bases/{knowledge_base_id}/chat/sessions", response_model=ApiResponse)
@@ -659,6 +681,8 @@ def save_chat_session(
 
     db.commit()
     db.refresh(session)
+
+    cache_delete_pattern(f"kb:{knowledge_base_id}:sessions:*")
 
     messages = db.query(ChatMessage).filter(ChatMessage.session_id == session.id).order_by(ChatMessage.id.asc()).all()
 
@@ -757,6 +781,8 @@ def delete_chat_session(
     db.delete(session)
     db.commit()
 
+    cache_delete_pattern(f"kb:{knowledge_base_id}:sessions:*")
+
     return ApiResponse(code=0, message="ok", data={"id": session_id})
 
 
@@ -791,6 +817,8 @@ def rename_chat_session(
     session.updated_at = func.now()
     db.commit()
     db.refresh(session)
+
+    cache_delete_pattern(f"kb:{knowledge_base_id}:sessions:*")
 
     return ApiResponse(
         code=0,

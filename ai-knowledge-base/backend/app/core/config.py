@@ -15,7 +15,7 @@ ALLOWED_ORIGINS = [
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'knowledge_base.db')}")
+DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'data', 'knowledge_base.db')}")
 
 JWT_SECRET = os.getenv("JWT_SECRET", "super-secret-key-change-in-production")
 JWT_ALGORITHM = "HS256"
@@ -33,3 +33,9 @@ MAX_HISTORY_TOKENS = int(os.getenv("MAX_HISTORY_TOKENS", "2000"))
 
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "document_chunks")
+
+REDIS_URL = os.getenv("REDIS_URL", "")
+
+CACHE_ENABLED = os.getenv("CACHE_ENABLED", "true").lower() in ("true", "1", "yes")
+SEARCH_CACHE_TTL = int(os.getenv("SEARCH_CACHE_TTL", "300"))
+SESSION_CACHE_TTL = int(os.getenv("SESSION_CACHE_TTL", "30"))

@@ -3,6 +3,7 @@ import os
 from sqlalchemy.orm import Session
 
 from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
+from app.core.redis_client import cache_delete_pattern
 from app.models import Document, KnowledgeBaseSetting
 from app.services.chunk_service import chunk_text, recursive_chunk_text
 from app.services.document_parser import parse_document
@@ -56,6 +57,11 @@ def process_document(document_id: int, db: Session) -> Document:
         doc.status = "completed"
         db.commit()
         create_fts_index(db, doc)
+
+        kb_id = doc.knowledge_base_id
+        cache_delete_pattern(f"kb:search:{kb_id}:*")
+        cache_delete_pattern(f"kb:semantic:{kb_id}:*")
+
         return doc
     except Exception as e:
         doc.content = str(e)
