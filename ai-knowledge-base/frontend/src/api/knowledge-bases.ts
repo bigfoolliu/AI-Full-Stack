@@ -288,6 +288,24 @@ export const updateKnowledgeBaseSettings = async (
   return response.data;
 };
 
+export interface ChatFeedbackPayload {
+  session_id: number;
+  message_id: number;
+  feedback: "thumbs_up" | "thumbs_down";
+  comment?: string;
+}
+
+export const sendChatFeedback = async (
+  kbId: string | number,
+  payload: ChatFeedbackPayload
+) => {
+  const response = await http.post<ApiResponse<{ id: number; feedback: string }>>(
+    `/api/knowledge-bases/${kbId}/chat/feedback`,
+    payload
+  );
+  return response.data;
+};
+
 export const getUploadUrl = (knowledgeBaseId: string | number) =>
   `http://127.0.0.1:8000/api/knowledge-bases/${knowledgeBaseId}/documents`;
 

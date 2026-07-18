@@ -65,3 +65,10 @@ class UpdateKnowledgeBaseSettingRequest(BaseModel):
     model_name: str | None = None
     hybrid_search: bool | None = None
     hybrid_alpha: float | None = None
+
+
+class ChatFeedbackRequest(BaseModel):
+    session_id: int
+    message_id: int
+    feedback: str
+    comment: str | None = None

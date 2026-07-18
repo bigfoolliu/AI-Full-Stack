@@ -1,3 +1,4 @@
+from app.models.chat_feedback import ChatFeedback
 from app.models.chat_message import ChatMessage
 from app.models.chat_session import ChatSession
 from app.models.document import Document
@@ -13,6 +14,7 @@ __all__ = [
     "Document",
     "ChatSession",
     "ChatMessage",
+    "ChatFeedback",
 ]
 
 from app.core.database import Base

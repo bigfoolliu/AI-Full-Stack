@@ -12,9 +12,10 @@ from sqlalchemy.orm import Session
 
 from app.core.config import EMBEDDING_API_KEY, UPLOAD_DIR
 from app.core.security import get_current_user, get_db
-from app.models import ChatMessage, ChatSession, Document, KnowledgeBase, KnowledgeBaseSetting, User
+from app.models import ChatFeedback, ChatMessage, ChatSession, Document, KnowledgeBase, KnowledgeBaseSetting, User
 from app.schemas.common import ApiResponse, PaginatedData
 from app.schemas.knowledge_base import (
+    ChatFeedbackRequest,
     ChatRequest,
     ChatSessionMessagePayload,
     CreateKnowledgeBaseRequest,
@@ -638,6 +639,65 @@ def save_chat_session(
         code=0,
         message="ok",
         data=_serialize_chat_session(session, messages),
+    )
+
+
+@router.post("/knowledge-bases/{knowledge_base_id}/chat/feedback", response_model=ApiResponse)
+def submit_chat_feedback(
+    knowledge_base_id: int,
+    payload: ChatFeedbackRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    session = (
+        db.query(ChatSession)
+        .filter(
+            ChatSession.id == payload.session_id,
+            ChatSession.knowledge_base_id == knowledge_base_id,
+        )
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    message = (
+        db.query(ChatMessage)
+        .filter(ChatMessage.id == payload.message_id, ChatMessage.session_id == payload.session_id)
+        .first()
+    )
+    if not message:
+        raise HTTPException(status_code=404, detail="消息不存在")
+
+    if payload.feedback not in ("thumbs_up", "thumbs_down"):
+        raise HTTPException(status_code=400, detail="feedback 必须为 thumbs_up 或 thumbs_down")
+
+    existing = db.query(ChatFeedback).filter(ChatFeedback.message_id == payload.message_id).first()
+    if existing:
+        existing.feedback = payload.feedback
+        if payload.comment is not None:
+            existing.comment = payload.comment
+        db.commit()
+        db.refresh(existing)
+        return ApiResponse(code=0, message="ok", data={"id": existing.id, "feedback": existing.feedback})
+
+    fb = ChatFeedback(
+        session_id=payload.session_id,
+        message_id=payload.message_id,
+        feedback=payload.feedback,
+        comment=payload.comment or "",
+    )
+    db.add(fb)
+    db.commit()
+    db.refresh(fb)
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={"id": fb.id, "feedback": fb.feedback},
     )
 
 

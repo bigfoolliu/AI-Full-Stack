@@ -19,6 +19,7 @@ class Base(DeclarativeBase):
 def init_db():
     from app.models import (  # noqa: F401
         Base,
+        ChatFeedback,
         ChatMessage,
         ChatSession,
         Document,

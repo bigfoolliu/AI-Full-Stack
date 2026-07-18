@@ -7,6 +7,7 @@ import {
   getChatSessions,
   getKnowledgeBaseDetail,
   saveChatSession,
+  sendChatFeedback,
   type ChatSessionItem,
 } from '../api/knowledge-bases';
 
@@ -26,6 +27,10 @@ interface Message {
   content: string;
   sources?: SourceItem[];
   timestamp: number;
+  messageId?: number;
+  feedback?: 'thumbs_up' | 'thumbs_down';
+  feedbackComment?: string;
+  showFeedbackComment?: boolean;
 }
 
 const route = useRoute();
@@ -57,12 +62,18 @@ const parseTimestamp = (value?: string) => {
 };
 
 const mapMessages = (
-  sessionMessages: { role: 'user' | 'assistant'; content: string; created_at?: string }[],
+  sessionMessages: {
+    id?: number;
+    role: 'user' | 'assistant';
+    content: string;
+    created_at?: string;
+  }[],
 ) =>
-  sessionMessages.map((message) => ({
-    role: message.role,
-    content: message.content,
-    timestamp: parseTimestamp(message.created_at),
+  sessionMessages.map((msg) => ({
+    messageId: msg.id,
+    role: msg.role,
+    content: msg.content,
+    timestamp: parseTimestamp(msg.created_at),
   }));
 
 const sortSessions = (items: ChatSessionItem[]) =>
@@ -118,6 +129,19 @@ const persistCurrentSession = async (snapshot: Message[]) => {
   if (response.code === 0 && response.data) {
     currentSessionId.value = response.data.id;
     upsertSession(response.data);
+    const apiMessages = response.data.messages || [];
+    const updated = [...messages.value];
+    let apiIdx = 0;
+    for (let i = 0; i < updated.length && apiIdx < apiMessages.length; i++) {
+      if (
+        updated[i].role === apiMessages[apiIdx].role &&
+        updated[i].content === apiMessages[apiIdx].content
+      ) {
+        updated[i].messageId = apiMessages[apiIdx].id;
+        apiIdx++;
+      }
+    }
+    messages.value = updated;
   }
 };
 
@@ -230,6 +254,43 @@ const formatSource = (source: SourceItem) => {
 
 const formatScore = (score: number) => {
   return (score * 100).toFixed(1) + '%';
+};
+
+const submitFeedback = async (msg: Message, idx: number, feedback: 'thumbs_up' | 'thumbs_down') => {
+  if (!msg.messageId) return;
+  const updated = [...messages.value];
+  updated[idx] = { ...updated[idx], feedback, showFeedbackComment: feedback === 'thumbs_down' };
+  messages.value = updated;
+
+  try {
+    await sendChatFeedback(Number(knowledgeBaseId), {
+      session_id: currentSessionId.value!,
+      message_id: msg.messageId,
+      feedback,
+    });
+  } catch {
+    const reverted = [...messages.value];
+    reverted[idx] = { ...reverted[idx], feedback: undefined, showFeedbackComment: false };
+    messages.value = reverted;
+  }
+};
+
+const submitFeedbackComment = async (msg: Message, idx: number) => {
+  if (!msg.messageId || !msg.feedback) return;
+  const comment = msg.feedbackComment?.trim() || '';
+  try {
+    await sendChatFeedback(Number(knowledgeBaseId), {
+      session_id: currentSessionId.value!,
+      message_id: msg.messageId,
+      feedback: msg.feedback,
+      comment,
+    });
+    const updated = [...messages.value];
+    updated[idx] = { ...updated[idx], showFeedbackComment: false };
+    messages.value = updated;
+  } catch {
+    // ignore
+  }
 };
 
 const toggleSource = (key: string) => {
@@ -378,6 +439,38 @@ onMounted(async () => {
                     <p v-else class="chat-no-sources">
                       未在知识库中找到与问题相关的文档内容，AI 回答可能不准确。
                     </p>
+                  </div>
+                  <div v-if="msg.messageId" class="chat-feedback">
+                    <button
+                      class="chat-feedback__btn"
+                      :class="{ 'chat-feedback__btn--active': msg.feedback === 'thumbs_up' }"
+                      :disabled="loading"
+                      @click="submitFeedback(msg, idx, 'thumbs_up')"
+                    >
+                      👍
+                    </button>
+                    <button
+                      class="chat-feedback__btn"
+                      :class="{ 'chat-feedback__btn--active': msg.feedback === 'thumbs_down' }"
+                      :disabled="loading"
+                      @click="submitFeedback(msg, idx, 'thumbs_down')"
+                    >
+                      👎
+                    </button>
+                    <textarea
+                      v-if="msg.showFeedbackComment"
+                      v-model="msg.feedbackComment"
+                      class="chat-feedback__comment"
+                      placeholder="请输入反馈备注（可选）"
+                      rows="2"
+                    />
+                    <button
+                      v-if="msg.showFeedbackComment"
+                      class="chat-feedback__submit"
+                      @click="submitFeedbackComment(msg, idx)"
+                    >
+                      提交
+                    </button>
                   </div>
                 </div>
                 <p class="chat-timestamp">{{ formatTime(msg.timestamp) }}</p>
@@ -844,6 +937,68 @@ onMounted(async () => {
 .chat-empty-alert__link {
   color: #c2410c;
   font-weight: 600;
+}
+
+.chat-feedback {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.chat-feedback__btn {
+  border: 1px solid #dbe2ea;
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 14px;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: all 0.15s;
+}
+
+.chat-feedback__btn:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
+.chat-feedback__btn--active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.chat-feedback__comment {
+  width: 100%;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  resize: vertical;
+  margin-top: 4px;
+}
+
+.chat-feedback__comment:focus {
+  border-color: #2563eb;
+}
+
+.chat-feedback__submit {
+  border: 0;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.chat-feedback__submit:hover {
+  background: #1d4ed8;
 }
 
 @keyframes chat-blink {

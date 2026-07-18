@@ -167,11 +167,11 @@
 
 ### 任务清单
 
-- [ ] 创建 `chat_feedback` 表（id, session_id, message_id, feedback, comment, created_at）
-- [ ] 创建 `POST /api/knowledge-bases/{id}/chat/feedback` 接口
-- [ ] Chat 页面每条 AI 回复下方增加反馈按钮（👍 👎）
-- [ ] 点击后记录反馈，按钮变为已选状态
-- [ ] 可选填写反馈备注
+- [x] 创建 `chat_feedback` 表（id, session_id, message_id, feedback, comment, created_at）
+- [x] 创建 `POST /api/knowledge-bases/{id}/chat/feedback` 接口
+- [x] Chat 页面每条 AI 回复下方增加反馈按钮（👍 👎）
+- [x] 点击后记录反馈，按钮变为已选状态
+- [x] 可选填写反馈备注
 
 ### 验收标准
 
