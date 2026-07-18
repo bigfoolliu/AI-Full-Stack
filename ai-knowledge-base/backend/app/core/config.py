@@ -5,7 +5,12 @@
 import os
 
 APP_NAME = "AI Knowledge Base Backend"
-ALLOWED_ORIGINS = ["http://localhost:5173", "http://localhost:5174"]
+ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")

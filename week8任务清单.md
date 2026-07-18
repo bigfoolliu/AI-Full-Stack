@@ -167,24 +167,24 @@
 
 ### 任务清单
 
-- [ ] 创建 `frontend/Dockerfile`
-- [ ] 多阶段构建：`npm ci && npm run build` → `nginx:alpine` 运行
-- [ ] 创建 `frontend/nginx.conf`（路由重写支持 Vue Router history 模式）
-- [ ] 更新根目录 `docker-compose.yml`，加入所有服务：
-  - [ ] `frontend` 服务（nginx:alpine）
-  - [ ] `backend` 服务（uvicorn）
-  - [ ] `db` 服务（PostgreSQL 16）
-  - [ ] `qdrant` 服务
-  - [ ] `redis` 服务
-- [ ] 服务间网络、依赖顺序、健康检查配置
-- [ ] 环境变量通过 `.env` 文件传递
-- [ ] `docker-compose up` 一键启动全栈验证
+- [x] 创建 `frontend/Dockerfile`
+- [x] 多阶段构建：`npm ci && npm run build` → `nginx:alpine` 运行
+- [x] 创建 `frontend/nginx.conf`（路由重写支持 Vue Router history 模式）
+- [x] 更新根目录 `docker-compose.yml`，加入所有服务：
+  - [x] `frontend` 服务（nginx:alpine）
+  - [x] `backend` 服务（uvicorn）
+  - [x] `db` 服务（PostgreSQL 16）
+  - [x] `qdrant` 服务
+  - [x] `redis` 服务
+- [x] 服务间网络、依赖顺序、健康检查配置
+- [x] 环境变量通过 `.env` 文件传递
+- [x] `docker-compose up` 一键启动全栈验证
 
 ### 验收标准
 
-- [ ] `docker-compose up` 启动后浏览器可访问前端页面
-- [ ] 前端可正常调用后端接口
-- [ ] 知识库、文档、Chat 全链路在容器环境下正常
+- [x] `docker-compose up` 启动后浏览器可访问前端页面
+- [x] 前端可正常调用后端接口
+- [x] 知识库、文档、Chat 全链路在容器环境下正常
 
 ---
 
