@@ -305,6 +305,25 @@ export interface ChatFeedbackPayload {
   comment?: string;
 }
 
+export const deleteChatSession = async (kbId: string | number, sessionId: number) => {
+  const response = await http.delete<ApiResponse<{ id: number }>>(
+    `/api/knowledge-bases/${kbId}/chat/sessions/${sessionId}`
+  );
+  return response.data;
+};
+
+export const renameChatSession = async (
+  kbId: string | number,
+  sessionId: number,
+  payload: { session_id?: number | null; messages: ChatSessionMessage[] }
+) => {
+  const response = await http.put<ApiResponse<{ id: number; title: string; updated_at: string }>>(
+    `/api/knowledge-bases/${kbId}/chat/sessions/${sessionId}`,
+    payload
+  );
+  return response.data;
+};
+
 export const sendChatFeedback = async (
   kbId: string | number,
   payload: ChatFeedbackPayload

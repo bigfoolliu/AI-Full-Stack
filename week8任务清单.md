@@ -94,20 +94,20 @@
 
 ### 任务清单
 
-- [ ] 创建 `DELETE /api/knowledge-bases/{id}/chat/sessions/{session_id}` 接口
-- [ ] 创建 `PUT /api/knowledge-bases/{id}/chat/sessions/{session_id}` 接口（支持 `title` 参数）
-- [ ] 删除会话时级联删除关联的 messages 和 feedback
-- [ ] Chat 页面左侧会话列表增加删除按钮（带二次确认）
-- [ ] 会话标题双击进入编辑模式，回车或失焦保存
-- [ ] 当前会话被删除后自动切换到最新会话或新建会话
-- [ ] 被重命名的会话在列表中实时更新
+- [x] 创建 `DELETE /api/knowledge-bases/{id}/chat/sessions/{session_id}` 接口
+- [x] 创建 `PUT /api/knowledge-bases/{id}/chat/sessions/{session_id}` 接口（支持 `title` 参数）
+- [x] 删除会话时级联删除关联的 messages 和 feedback
+- [x] Chat 页面左侧会话列表增加删除按钮（带二次确认）
+- [x] 会话标题双击进入编辑模式，回车或失焦保存
+- [x] 当前会话被删除后自动切换到最新会话或新建会话
+- [x] 被重命名的会话在列表中实时更新
 
 ### 验收标准
 
-- [ ] 可以删除无用会话
-- [ ] 可以重命名会话标题
-- [ ] 删除的会话不再出现在列表中
-- [ ] 重命名的会话在刷新后保持新名称
+- [x] 可以删除无用会话
+- [x] 可以重命名会话标题
+- [x] 删除的会话不再出现在列表中
+- [x] 重命名的会话在刷新后保持新名称
 
 ---
 

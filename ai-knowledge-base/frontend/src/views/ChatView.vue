@@ -4,8 +4,10 @@ import { useRoute, useRouter } from 'vue-router';
 import MarkdownIt from 'markdown-it';
 import {
   chatStream,
+  deleteChatSession,
   getChatSessions,
   getKnowledgeBaseDetail,
+  renameChatSession,
   saveChatSession,
   sendChatFeedback,
   type ChatSessionItem,
@@ -52,6 +54,9 @@ const abortController = ref<AbortController | null>(null);
 const expandedKeys = ref<Set<string>>(new Set());
 
 const messageListRef = ref<HTMLElement | null>(null);
+const editingSessionId = ref<number | null>(null);
+const editingTitle = ref('');
+const editInputRef = ref<HTMLElement | null>(null);
 
 const history = computed(() => messages.value.map((m) => ({ role: m.role, content: m.content })));
 
@@ -87,6 +92,13 @@ const scrollToBottom = async () => {
 };
 
 watch([messages, currentAnswer], scrollToBottom, { deep: true });
+
+watch(editingSessionId, async (val) => {
+  if (val !== null) {
+    await nextTick();
+    editInputRef.value?.focus();
+  }
+});
 
 const setActiveSession = (session: ChatSessionItem | null) => {
   currentSessionId.value = session?.id ?? null;
@@ -239,6 +251,46 @@ const newChat = () => {
   loading.value = false;
 };
 
+const deleteSession = async (session: ChatSessionItem) => {
+  if (loading.value) return;
+  try {
+    await deleteChatSession(knowledgeBaseId, session.id);
+    sessions.value = sessions.value.filter((s) => s.id !== session.id);
+    if (currentSessionId.value === session.id) {
+      if (sessions.value.length > 0) {
+        setActiveSession(sessions.value[0]);
+      } else {
+        newChat();
+      }
+    }
+  } catch {
+    // ignore
+  }
+};
+
+const startEditing = (session: ChatSessionItem) => {
+  editingSessionId.value = session.id;
+  editingTitle.value = session.title;
+};
+
+const saveTitle = async (session: ChatSessionItem) => {
+  const title = editingTitle.value.trim();
+  if (!title || title === session.title) {
+    editingSessionId.value = null;
+    return;
+  }
+  try {
+    await renameChatSession(knowledgeBaseId, session.id, {
+      messages: [{ role: 'user', content: title }],
+    });
+    session.title = title;
+    sessions.value = sortSessions(sessions.value);
+  } catch {
+    // ignore
+  }
+  editingSessionId.value = null;
+};
+
 const selectSession = (session: ChatSessionItem) => {
   if (loading.value) return;
   setActiveSession(session);
@@ -364,17 +416,45 @@ onMounted(async () => {
         </div>
         <div v-if="loadingSessions" class="chat-sidebar__empty">加载中...</div>
         <div v-else-if="sessions.length === 0" class="chat-sidebar__empty">暂无历史会话</div>
-        <button
+        <div
           v-for="session in sessions"
           :key="session.id"
           class="chat-session-item"
           :class="{ 'chat-session-item--active': currentSessionId === session.id }"
-          :disabled="loading"
-          @click="selectSession(session)"
         >
-          <span class="chat-session-item__title">{{ session.title }}</span>
-          <span class="chat-session-item__time">{{ formatSessionTime(session.updated_at) }}</span>
-        </button>
+          <div
+            class="chat-session-item__main"
+            :class="{ 'chat-session-item__main--disabled': loading }"
+            @click="selectSession(session)"
+          >
+            <span
+              v-if="editingSessionId !== session.id"
+              class="chat-session-item__title"
+              @dblclick.stop="startEditing(session)"
+            >
+              {{ session.title }}
+            </span>
+            <input
+              v-else
+              v-model="editingTitle"
+              class="chat-session-item__edit-input"
+              @keydown.enter="saveTitle(session)"
+              @keydown.escape="editingSessionId = null"
+              @blur="saveTitle(session)"
+              @click.stop
+              ref="editInputRef"
+            />
+            <span class="chat-session-item__time">{{ formatSessionTime(session.updated_at) }}</span>
+          </div>
+          <button
+            class="chat-session-item__delete"
+            :disabled="loading"
+            @click.stop="deleteSession(session)"
+            title="删除会话"
+          >
+            ×
+          </button>
+        </div>
       </aside>
 
       <div class="chat-main">
@@ -608,24 +688,38 @@ onMounted(async () => {
 
 .chat-session-item {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  align-items: stretch;
   width: 100%;
-  padding: 12px;
-  border: 0;
   border-bottom: 1px solid #f1f5f9;
   background: #ffffff;
-  text-align: left;
-  cursor: pointer;
 }
 
 .chat-session-item:hover {
   background: #f8fafc;
 }
 
+.chat-session-item:hover .chat-session-item__delete {
+  display: flex;
+}
+
 .chat-session-item--active {
   background: #eff6ff;
+}
+
+.chat-session-item__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.chat-session-item__main--disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 .chat-session-item__title {
@@ -637,9 +731,38 @@ onMounted(async () => {
   color: #0f172a;
 }
 
+.chat-session-item__edit-input {
+  width: 100%;
+  font-size: 13px;
+  padding: 2px 4px;
+  border: 1px solid #409eff;
+  border-radius: 4px;
+  outline: none;
+  background: #ffffff;
+  color: #0f172a;
+}
+
 .chat-session-item__time {
   font-size: 11px;
   color: #94a3b8;
+}
+
+.chat-session-item__delete {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.chat-session-item__delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
 }
 
 .chat-main {

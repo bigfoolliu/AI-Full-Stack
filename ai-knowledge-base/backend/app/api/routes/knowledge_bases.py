@@ -729,6 +729,80 @@ def submit_chat_feedback(
     )
 
 
+@router.delete(
+    "/knowledge-bases/{knowledge_base_id}/chat/sessions/{session_id}",
+    response_model=ApiResponse,
+)
+def delete_chat_session(
+    knowledge_base_id: int,
+    session_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """删除会话及其关联的所有消息和反馈。"""
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.knowledge_base_id == knowledge_base_id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    db.query(ChatFeedback).filter(ChatFeedback.session_id == session_id).delete()
+    db.query(ChatMessage).filter(ChatMessage.session_id == session_id).delete()
+    db.delete(session)
+    db.commit()
+
+    return ApiResponse(code=0, message="ok", data={"id": session_id})
+
+
+@router.put(
+    "/knowledge-bases/{knowledge_base_id}/chat/sessions/{session_id}",
+    response_model=ApiResponse,
+)
+def rename_chat_session(
+    knowledge_base_id: int,
+    session_id: int,
+    payload: SaveChatSessionRequest,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
+) -> ApiResponse:
+    """重命名会话标题。"""
+    kb = db.query(KnowledgeBase).filter(KnowledgeBase.id == knowledge_base_id).first()
+    if not kb:
+        raise HTTPException(status_code=404, detail="知识库不存在")
+
+    session = (
+        db.query(ChatSession)
+        .filter(ChatSession.id == session_id, ChatSession.knowledge_base_id == knowledge_base_id)
+        .first()
+    )
+    if not session:
+        raise HTTPException(status_code=404, detail="会话不存在")
+
+    if not payload.messages:
+        raise HTTPException(status_code=400, detail="消息不能为空")
+
+    session.title = _build_session_title(payload.messages)
+    session.updated_at = func.now()
+    db.commit()
+    db.refresh(session)
+
+    return ApiResponse(
+        code=0,
+        message="ok",
+        data={
+            "id": session.id,
+            "title": session.title,
+            "updated_at": _format_datetime(session.updated_at or session.created_at),
+        },
+    )
+
+
 def _serialize_settings(s: KnowledgeBaseSetting) -> KnowledgeBaseSettingItem:
     """将 ORM 对象转为返回 Schema。"""
     return KnowledgeBaseSettingItem(
