@@ -13,6 +13,8 @@ import {
   type ChatSessionItem,
 } from '../api/knowledge-bases';
 
+import EmptyState from '../components/EmptyState.vue';
+
 const md = new MarkdownIt({ html: false, breaks: true });
 
 const mdRenderer = (text: string) => md.render(text);
@@ -415,7 +417,11 @@ onMounted(async () => {
           <el-button size="small" text @click="newChat">新建</el-button>
         </div>
         <div v-if="loadingSessions" class="chat-sidebar__empty">加载中...</div>
-        <div v-else-if="sessions.length === 0" class="chat-sidebar__empty">暂无历史会话</div>
+        <EmptyState
+          v-else-if="sessions.length === 0"
+          title="暂无历史会话"
+          description="新建一个会话开始提问吧"
+        />
         <div
           v-for="session in sessions"
           :key="session.id"

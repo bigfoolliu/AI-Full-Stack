@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
 import { getKnowledgeBases, type KnowledgeBaseItem } from '../api/knowledge-bases';
+import EmptyState from '../components/EmptyState.vue';
 
 const router = useRouter();
 const knowledgeBases = ref<KnowledgeBaseItem[]>([]);
@@ -99,13 +100,14 @@ const onPageChange = (page: number) => {
       <el-button type="primary" @click="goToCreate"> 新建知识库 </el-button>
     </div>
 
-    <el-table
-      v-loading="loading"
-      :data="knowledgeBases"
-      style="width: 100%"
-      empty-text="还没有知识库，先创建一个吧"
-      stripe
-    >
+    <el-table v-loading="loading" :data="knowledgeBases" style="width: 100%" stripe>
+      <template #empty>
+        <EmptyState title="还没有知识库" description="创建一个知识库来开始管理文档吧">
+          <template #action>
+            <el-button type="primary" @click="goToCreate">新建知识库</el-button>
+          </template>
+        </EmptyState>
+      </template>
       <el-table-column label="名称" min-width="180">
         <template #default="{ row }">
           <div class="kb-name-cell">

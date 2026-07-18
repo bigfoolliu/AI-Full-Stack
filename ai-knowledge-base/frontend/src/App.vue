@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useUserStore } from './stores/user';
+import ErrorBoundary from './components/ErrorBoundary.vue';
 interface BreadcrumbItem {
   label: string;
   to?: string;
@@ -91,7 +92,9 @@ const handleLogout = () => {
       </header>
 
       <main class="shell-content">
-        <RouterView />
+        <ErrorBoundary>
+          <RouterView />
+        </ErrorBoundary>
       </main>
     </div>
   </div>

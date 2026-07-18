@@ -21,7 +21,8 @@ http.interceptors.request.use((config) => {
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !redirecting) {
+    const status = error.response?.status;
+    if (status === 401 && !redirecting) {
       const isLoginRequest = error.config?.url === "/api/login";
       if (!isLoginRequest) {
         redirecting = true;
@@ -33,6 +34,14 @@ http.interceptors.response.use(
           window.location.href = "/login";
         }, 500);
       }
+    } else if (status === 403) {
+      ElMessage.error("没有权限执行此操作");
+    } else if (status === 404) {
+      ElMessage.error("请求的资源不存在");
+    } else if (status && status >= 500) {
+      ElMessage.error("服务器错误，请稍后重试");
+    } else if (!error.response) {
+      ElMessage.error("网络错误，请检查网络连接");
     }
     return Promise.reject(error);
   }

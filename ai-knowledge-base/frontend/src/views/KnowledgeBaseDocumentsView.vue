@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { Search } from '@element-plus/icons-vue';
+import EmptyState from '../components/EmptyState.vue';
 import {
   getKnowledgeBaseDetail,
   getKnowledgeBaseDocuments,
@@ -256,13 +257,10 @@ onUnmounted(() => {
     </div>
 
     <template v-if="searchMode">
-      <el-table
-        v-loading="searchLoading"
-        :data="searchResults"
-        style="width: 100%"
-        empty-text="未搜索到相关文档"
-        stripe
-      >
+      <el-table v-loading="searchLoading" :data="searchResults" style="width: 100%" stripe>
+        <template #empty>
+          <EmptyState title="未搜索到相关文档" description="尝试其他关键词" />
+        </template>
         <el-table-column prop="filename" label="文档名称" min-width="160" />
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
@@ -290,13 +288,18 @@ onUnmounted(() => {
     </template>
 
     <template v-else>
-      <el-table
-        v-loading="loading"
-        :data="documents"
-        style="width: 100%"
-        empty-text="当前还没有文档，快去上传一个吧"
-        stripe
-      >
+      <el-table v-loading="loading" :data="documents" style="width: 100%" stripe>
+        <template #empty>
+          <EmptyState title="当前还没有文档" description="上传一个文档开始吧">
+            <template #action>
+              <el-button
+                type="primary"
+                @click="$router.push(`/knowledge-bases/${route.params.id}/upload`)"
+                >上传文档</el-button
+              >
+            </template>
+          </EmptyState>
+        </template>
         <el-table-column prop="name" label="文档名称" min-width="200" />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">
