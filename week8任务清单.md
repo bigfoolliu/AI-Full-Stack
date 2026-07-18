@@ -143,19 +143,19 @@
 
 ### 任务清单
 
-- [ ] 创建 `backend/Dockerfile`
-- [ ] 使用多阶段构建（依赖安装 → 运行时）
-- [ ] 设置 `WORKDIR`、`COPY` 顺序优化缓存
-- [ ] 安装 `uv` 依赖管理
-- [ ] 暴露 8000 端口
-- [ ] 设置 `CMD` 启动 uvicorn
-- [ ] 编写 `.dockerignore`（排除 .venv、__pycache__、.git）
-- [ ] 本地构建并验证启动成功
+- [x] 创建 `backend/Dockerfile`
+- [x] 使用多阶段构建（依赖安装 → 运行时）
+- [x] 设置 `WORKDIR`、`COPY` 顺序优化缓存
+- [x] 安装 `uv` 依赖管理
+- [x] 暴露 8000 端口
+- [x] 设置 `CMD` 启动 uvicorn
+- [x] 编写 `.dockerignore`（排除 .venv、__pycache__、.git）
+- [x] 本地构建并验证启动成功
 
 ### 验收标准
 
-- [ ] `docker build -t kb-backend backend/` 构建成功
-- [ ] 容器启动后 `/health` 可访问
+- [x] `docker build -t kb-backend backend/` 构建成功
+- [x] 容器启动后 `/health` 可访问
 
 ---
 

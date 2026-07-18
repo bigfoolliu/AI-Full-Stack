@@ -1,0 +1,13 @@
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.idea
+.ruff_cache
+knowledge_base.db
+uploads/*
+scripts
+README.md
+backend.egg-info
+__pycache__/
